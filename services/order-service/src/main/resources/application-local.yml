@@ -1,0 +1,39 @@
+server:
+  port: 8083
+  servlet:
+    context-path: /api/order
+
+spring:
+  application:
+    name: order-service
+
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/order_db
+    username: order_user
+    password: order_pw
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+
+# (??) ?? ?? ??? URL(?????? ??, ?? ?? ???? ??? ??)
+clients:
+  product:
+    base-url: ${PRODUCT_BASE_URL:http://localhost:8080/api/product}
+  payment:
+    base-url: ${PAYMENT_BASE_URL:http://localhost:8080/api/payment}
+
+app:
+  idempotency:
+    ttl-seconds: 300
+    key-prefix: order:idempotency
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:local-dev-secret-change-me}

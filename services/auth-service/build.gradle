@@ -1,0 +1,78 @@
+plugins {
+	id 'java'
+	id 'org.springframework.boot' version '4.0.1'
+	id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.msashop'
+version = '0.0.1-SNAPSHOT'
+description = 'Demo project for Spring Boot'
+
+java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+// Spring Boot 기본
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation 'org.springframework.boot:spring-boot-starter-validation'
+	annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+	// JPA
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+	// DB 드라이버
+	runtimeOnly 'org.postgresql:postgresql:42.7.4'
+
+	// Redis (서비스별로 필요 없으면 제거 가능)
+	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
+
+	// 관측/헬스
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+	// 유틸리티
+	implementation 'com.google.guava:guava:32.1.2-jre'
+	implementation "com.fasterxml.jackson.core:jackson-databind"
+	implementation 'org.apache.commons:commons-lang3:3.14.0'
+	implementation 'commons-io:commons-io:2.15.1'
+
+	// Lombok (중복 제거 버전)
+	compileOnly 'org.projectlombok:lombok:1.18.34'
+	annotationProcessor 'org.projectlombok:lombok:1.18.34'
+
+	// API 문서 (내부 서비스에만)
+	implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.5.0'
+
+	// 테스트
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'
+	testImplementation 'com.h2database:h2'
+	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+	// 빌드
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+	// 로그/쿼리 추적(권장: devOnly로)
+	developmentOnly 'com.github.gavlyukovskiy:p6spy-spring-boot-starter:1.9.0'
+
+	// 커넥션풀(선택)
+	implementation 'com.vladmihalcea.flexy-pool:flexy-pool-core:1.2.4'
+
+	// 보안(인증/인가)
+	implementation 'org.springframework.boot:spring-boot-starter-security'
+
+	// JWT 발급/검증(기존 유지)
+	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+	implementation "org.bouncycastle:bcprov-jdk18on:1.78.1"
+}
+
+tasks.named('test') {
+	useJUnitPlatform()
+}

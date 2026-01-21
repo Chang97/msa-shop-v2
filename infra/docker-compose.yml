@@ -1,0 +1,30 @@
+# infra/docker-compose.yml
+services:
+  postgres:
+    image: postgres:16
+    container_name: msa-shop-postgres
+    environment:
+      POSTGRES_DB: msashop
+      POSTGRES_USER: msashop
+      POSTGRES_PASSWORD: msashop
+    ports:
+      - "5432:5432"
+    volumes:
+      - msashop_pgdata:/var/lib/postgresql/data
+    networks:
+      - msashop-net
+
+  redis:
+    image: redis:7
+    container_name: msa-shop-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - msashop-net
+
+volumes:
+  msashop_pgdata:
+
+networks:
+  msashop-net:
+    driver: bridge

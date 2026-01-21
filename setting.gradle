@@ -1,0 +1,13 @@
+rootProject.name = "msa-shop-v2"
+
+include(":gateway")
+include(":auth-service")
+include(":product-service")
+include(":order-service")
+include(":payment-service")
+
+project(":gateway").projectDir = file("services/gateway")
+project(":auth-service").projectDir = file("services/auth-service")
+project(":product-service").projectDir = file("services/product-service")
+project(":order-service").projectDir = file("services/order-service")
+project(":payment-service").projectDir = file("services/payment-service")

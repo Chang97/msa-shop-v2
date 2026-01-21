@@ -1,0 +1,110 @@
+# =========================
+# auth-service (local)
+# =========================
+server:
+  port: 8081                         # auth-service ?? ??
+  servlet:
+    context-path: /api/auth          # auth-service API prefix (????? ???? ??? ?)
+
+spring:
+  application:
+    name: auth-service               # ??? ???(??/????/????? ???? ?? ??)
+
+  devtools:
+    restart:
+      enabled: true                  # ?? ?? ??(????)
+    livereload:
+      enabled: true                  # ?? ?? ??(??????)
+
+  # --- DB: ???? DB ?? ?? (auth_db) ---
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/auth_db  # auth-service ?? DB
+    username: auth_user               # auth_db ?? ??
+    password: auth_pw                 # ??? ????(??? ENV ??)
+    hikari:
+      maximum-pool-size: 10           # ??? ? ??
+      minimum-idle: 2                 # ?? ?? ???
+      idle-timeout: 30000             # ?? ????(ms)
+      connection-timeout: 20000       # ??? ?? ????(ms)
+      max-lifetime: 1800000           # ??? ?? ??(ms)
+
+  # --- Redis: refresh token / ?? ?? ? ---
+  data:
+    redis:
+      host: localhost                 # ?? redis host
+      port: 6379                      # ?? redis port
+      # password: ${REDIS_PASSWORD:}  # ?? ??? ?? ?? ??(?? ? compose? requirepass ??)
+
+  # --- JPA ---
+  jpa:
+    hibernate:
+      ddl-auto: none                  # validate/update/create ? ?? ? ??(??? ?? none/validate)
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: Asia/Seoul       # ??? ???(??)
+
+# --- SQL ??(???) ---
+decorator:
+  datasource:
+    p6spy:
+      enabled: true                   # p6spy ???(???? ?? ??? ??)
+
+logging:
+  level:
+    p6spy: INFO                       # p6spy ?? ??(?? ? DEBUG?)
+
+# =========================
+# app: auth ?? ?? (Redis ?/TTL ?)
+# =========================
+app:
+  auth:
+    refresh-token:
+      ttl-seconds: 604800             # Refresh Token TTL(?) = 7?
+      key-prefix: auth:refresh_token  # Redis key prefix(???/?? ??? ???)
+    authority:
+      cache-ttl-seconds: 600          # ?? ?? TTL(?) = 10?
+      key-prefix: auth:perm           # ?? ?? ? prefix
+
+  # (??) ??/??? ??? ??? ? ??
+  permission:
+    cache:
+      ttl-seconds: 600
+      key-prefix: app:permission
+
+# =========================
+# JWT ?? (?? ?? auth-service)
+# =========================
+jwt:
+  secret: ${JWT_SECRET:local-dev-secret-change-me}         # ?? ???(??? ENV? ?? ??)
+  access-token-expiration-seconds: ${JWT_ACCESS_TOKEN_EXPIRATION_SECONDS:3600}      # ??? ?? TTL
+  refresh-token-expiration-seconds: ${JWT_REFRESH_TOKEN_EXPIRATION_SECONDS:604800}  # ???? ?? TTL
+
+# =========================
+# CORS (??? ?? ?? ??)
+# =========================
+cors:
+  allowed-origins:
+    - "http://localhost:5173"         # Vite dev server
+  allowed-methods: ["GET","POST","PUT","PATCH","DELETE","OPTIONS"]
+  allowed-headers: ["Authorization","Content-Type"]
+  exposed-headers: ["Authorization"]  # ??? ??? Authorization ?? ?? ?? ?? ?
+  allow-credentials: true             # ?? ???? true
+  max-age: 3600
+
+# =========================
+# ?? ??? ? ??? ??(??)
+# =========================
+security:
+  internal:
+    header-name: X-Internal-Secret    # ?? ?? ??? ???(??)
+    service-secret: ${INTERNAL_SERVICE_SECRET:local-internal-secret}  # ?? ?? ???(?? ???)
+
+  # ??? ??(?? ?? ?? ??) - ?? ? ??
+  service-accounts:
+    accounts:
+      - client-id: order-service
+        client-secret: ${ORDER_SERVICE_CLIENT_SECRET:local-order-service-secret}
+        permissions:
+          - PRODUCT_UPDATE            # ?: ?? ??(??)
