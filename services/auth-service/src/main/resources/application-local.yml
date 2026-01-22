@@ -9,6 +9,10 @@ server:
 spring:
   application:
     name: auth-service               # ??? ???(??/????/????? ???? ?? ??)
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration, classpath:db/seed/local
 
   devtools:
     restart:
@@ -19,7 +23,7 @@ spring:
   # --- DB: ???? DB ?? ?? (auth_db) ---
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/auth_db  # auth-service ?? DB
+    url: jdbc:postgresql://localhost:15432/auth_db  # auth-service ?? DB
     username: auth_user               # auth_db ?? ??
     password: auth_pw                 # ??? ????(??? ENV ??)
     hikari:
@@ -33,7 +37,7 @@ spring:
   data:
     redis:
       host: localhost                 # ?? redis host
-      port: 6379                      # ?? redis port
+      port: 16379                      # ?? redis port
       # password: ${REDIS_PASSWORD:}  # ?? ??? ?? ?? ??(?? ? compose? requirepass ??)
 
   # --- JPA ---

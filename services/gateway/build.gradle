@@ -1,12 +1,11 @@
 plugins {
 	id 'java'
-	id 'org.springframework.boot' version '4.0.1'
-	id 'io.spring.dependency-management' version '1.1.7'
+	id 'org.springframework.boot'
+	id 'io.spring.dependency-management'
 }
 
 group = 'com.msashop'
 version = '0.0.1-SNAPSHOT'
-description = 'Demo project for Spring Boot'
 
 java {
 	toolchain {
@@ -14,25 +13,29 @@ java {
 	}
 }
 
-repositories {
-	mavenCentral()
+dependencyManagement {
+	imports {
+		mavenBom "org.springframework.cloud:spring-cloud-dependencies:2023.0.3"
+	}
 }
 
 dependencies {
-	// Gateway (Reactive)
+	// WebFlux (Gateway는 Reactive 기반)
+	implementation 'org.springframework.boot:spring-boot-starter-webflux'
+
+	// Spring Cloud Gateway
 	implementation 'org.springframework.cloud:spring-cloud-starter-gateway'
 
-	// 보안: 게이트웨이에서 1차 JWT 검증(권장)
+	// 보안: Gateway에서 JWT 1차 검증
 	implementation 'org.springframework.boot:spring-boot-starter-security'
 	implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
 
-	// Redis: rate limit 쓰면 필요
+	// Redis(레이트리밋/세션/캐시 용도)
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
 
 	// 관측/헬스
 	implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
-	// 테스트
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
