@@ -8,9 +8,9 @@ public interface RefreshTokenPort {
 
     Optional<RefreshTokenRecord> findByTokenId(String tokenId);
 
-    RefreshTokenRecord save(NewRefreshToken newToken);
+    void save(NewRefreshToken newToken);
 
-    void revoke(String tokenId, Instant revokedAt, Long revokedBy, String replacedByTokenId);
+    void revoke(String tokenId, Instant revokedAt, String replacedByTokenId);
 
     void markUsed(String tokenId, Instant lastUsedAt);
 

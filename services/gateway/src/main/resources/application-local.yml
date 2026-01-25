@@ -8,6 +8,26 @@ spring:
   # Gateway 라우팅: 예시는 "서비스 직접 호출" 방식으로 연결
   cloud:
     gateway:
+      globalcors:
+        add-to-simple-url-handler-mapping: true
+        cors-configurations:
+          '[/**]':
+            # allowCredentials: true면 allowedOrigins에 * 못 씀
+            allowed-origins:
+              - "http://localhost:5173"
+            allowed-methods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+            allowed-headers:
+              - "*"
+            exposed-headers:
+              - "Set-Cookie"
+            allow-credentials: true
+            max-age: 3600
       routes:
         - id: auth
           uri: http://localhost:8081

@@ -5,6 +5,8 @@ import com.msashop.auth.command.application.port.in.model.LogoutCommand;
 import com.msashop.auth.command.application.port.out.RefreshTokenPort;
 import com.msashop.auth.command.application.service.token.RefreshTokenParser;
 import com.msashop.auth.command.application.service.token.TokenHasher;
+import com.msashop.auth.common.exception.ErrorCode;
+import com.msashop.auth.common.exception.UnauthorizedException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,16 +26,32 @@ public class LogoutService implements LogoutUseCase {
         Instant now = Instant.now();
 
         String raw = command.refreshToken();
-        String tokenId = refreshTokenParser.extractTokenId(raw);
+        if (raw == null || raw.isBlank()) {
+            return; // 할 게 없으면 그냥 종료
+        }
+
+        final String tokenId;
+        try {
+            tokenId = refreshTokenParser.extractTokenId(raw);
+        } catch (RuntimeException e) {
+            return; // 포맷이 이상해도 "정리" 목적이므로 조용히 종료(필요하면 warn 로그만)
+        }
+
         String rawHash = tokenHasher.sha256Hex(raw);
 
-        var stored = refreshTokenPort.findActiveByTokenId(tokenId, now)
-                .orElseThrow(() -> new IllegalArgumentException("Invalid refresh token"));
+        var storedOpt = refreshTokenPort.findActiveByTokenId(tokenId, now);
+        if (storedOpt.isEmpty()) {
+            return;
+        }
 
-        if (!rawHash.equals(stored.tokenHash())) throw new IllegalArgumentException("Invalid refresh token");
+        var stored = storedOpt.get();
+        // 해시 불일치(위변조/오입력)도 조용히 종료
+        // (보안 이벤트로 보고 싶으면 warn 로그 남기고 return)
+        if (!rawHash.equals(stored.tokenHash())) {
+            return;
+        }
 
-        // 1차: tokenId만으로 revoke
-        // - 엄밀하게는 rawHash까지 비교하고 revoke하는게 더 안전
-        refreshTokenPort.revoke(tokenId, now, 0L, null);
+        // revoke는 idempotent하게 구현되어 있어야 함(이미 revoked여도 문제없게)
+        refreshTokenPort.revoke(tokenId, now, null);
     }
 }

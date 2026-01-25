@@ -1,0 +1,25 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:15432/auth_test_db
+    username: auth_test_user
+    password: auth_test_pw
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration, classpath:db/seed/test
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+
+app:
+  auth:
+    refresh-token:
+      ttl-seconds: 604800
+
+security:
+  jwt:
+    issuer: auth-service
+    access-token-ttl-seconds: 1800
+    private-key-location: classpath:keys/jwt-private.pem
+    public-key-location: classpath:keys/jwt-public.pem

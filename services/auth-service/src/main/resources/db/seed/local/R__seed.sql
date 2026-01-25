@@ -37,7 +37,7 @@ ON CONFLICT DO NOTHING;
 -- admin user (password: admin1234!)
 -- user_password is BCrypt hash
 INSERT INTO users (email, login_id, user_password, user_name, use_yn)
-VALUES ('admin@msashop.local', 'admin', '$2b$10$Sj0qxmNEDrFK2FrhiUV3A.lWE.cwPpPj7Ps/0bHbP9owORbBfKS3q', '관리자', true)
+VALUES ('admin@msashop.local', 'admin', 'argon2Hash=$argon2id$v=19$m=16384,t=2,p=1$Utz5QoW2IhbCH4INZ/4uQA$tTIoEWh9GaDAGBjvg7Iuh84XEZqfR6zB4llyT/mW3Jw', '관리자', true)
 ON CONFLICT (email) DO NOTHING;
 
 -- admin role mapping

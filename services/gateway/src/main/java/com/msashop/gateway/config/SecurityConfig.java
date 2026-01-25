@@ -1,18 +1,10 @@
 package com.msashop.gateway.config;
 
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-import java.util.Base64;
-
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
-
-import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
-import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
 
 /**
  * Gateway는 "1차 인증(토큰 유효성)"만 빠르게 컷해주는 역할이 핵심.
@@ -38,22 +30,16 @@ public class SecurityConfig {
         return http
                 // API Gateway는 세션 기반이 아니므로 CSRF는 보통 끔(토큰 기반)
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
-
+                .cors(cors -> {})
                 // 경로별 접근 제어
                 .authorizeExchange(ex -> ex
                         // 인증 없이 열어둘 엔드포인트
                         .pathMatchers("/api/auth/**").permitAll()
-
-                        // (선택) gateway에서 coarse한 권한 컷이 필요하면 이런 식으로 추가 가능
-                        // .pathMatchers("/api/admin/**").hasRole("ADMIN")
-
                         // 그 외는 전부 인증 필요
                         .anyExchange().authenticated()
                 )
-
                 // JWT 검증 활성화 (Resource Server 표준)
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> {}))
-
                 .build();
     }
 

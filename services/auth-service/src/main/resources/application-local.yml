@@ -62,12 +62,17 @@ logging:
 # =========================
 app:
   auth:
+    cookie:
+      secure: false
+      same-site: Lax
+      path: /api/auth
     refresh-token:
       ttl-seconds: 604800             # Refresh Token TTL(?) = 7?
       key-prefix: auth:refresh_token  # Redis key prefix(???/?? ??? ???)
     authority:
       cache-ttl-seconds: 600          # ?? ?? TTL(?) = 10?
       key-prefix: auth:perm           # ?? ?? ? prefix
+
 
   # (??) ??/??? ??? ??? ? ??
   permission:
