@@ -61,6 +61,7 @@ dependencies {
 
 	// 보안(인증/인가)
 	implementation 'org.springframework.boot:spring-boot-starter-security'
+	implementation 'org.springframework.security:spring-security-oauth2-jose'
 
 	// JWT 발급/검증(기존 유지)
 	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'

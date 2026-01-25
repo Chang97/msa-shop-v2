@@ -3,8 +3,6 @@
 # =========================
 server:
   port: 8081                         # auth-service ?? ??
-  servlet:
-    context-path: /api/auth          # auth-service API prefix (????? ???? ??? ?)
 
 spring:
   application:
@@ -78,26 +76,6 @@ app:
       key-prefix: app:permission
 
 # =========================
-# JWT ?? (?? ?? auth-service)
-# =========================
-jwt:
-  secret: ${JWT_SECRET:local-dev-secret-change-me}         # ?? ???(??? ENV? ?? ??)
-  access-token-expiration-seconds: ${JWT_ACCESS_TOKEN_EXPIRATION_SECONDS:3600}      # ??? ?? TTL
-  refresh-token-expiration-seconds: ${JWT_REFRESH_TOKEN_EXPIRATION_SECONDS:604800}  # ???? ?? TTL
-
-# =========================
-# CORS (??? ?? ?? ??)
-# =========================
-cors:
-  allowed-origins:
-    - "http://localhost:5173"         # Vite dev server
-  allowed-methods: ["GET","POST","PUT","PATCH","DELETE","OPTIONS"]
-  allowed-headers: ["Authorization","Content-Type"]
-  exposed-headers: ["Authorization"]  # ??? ??? Authorization ?? ?? ?? ?? ?
-  allow-credentials: true             # ?? ???? true
-  max-age: 3600
-
-# =========================
 # ?? ??? ? ??? ??(??)
 # =========================
 security:
@@ -112,3 +90,8 @@ security:
         client-secret: ${ORDER_SERVICE_CLIENT_SECRET:local-order-service-secret}
         permissions:
           - PRODUCT_UPDATE            # ?: ?? ??(??)
+  jwt:
+    issuer: auth-service
+    access-token-ttl-seconds: 1800
+    private-key-location: classpath:keys/jwt-private.pem
+    public-key-location: classpath:keys/jwt-public.pem
