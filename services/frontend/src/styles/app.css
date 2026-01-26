@@ -1,0 +1,192 @@
+:root {
+  font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #0f172a;
+  background-color: #f5f7fa;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background-color: #f5f7fa;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+.app-shell {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  color: #0f172a;
+}
+
+.app-header {
+  padding: 2.5rem 1.5rem 1rem;
+  text-align: center;
+}
+
+.brand {
+  font-size: 1.75rem;
+  font-weight: 700;
+}
+
+.subtitle {
+  margin: 0.35rem 0 0;
+  color: #475569;
+  font-size: 1rem;
+}
+
+main {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem 3rem;
+}
+
+.login-layout {
+  width: min(960px, 100%);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.card {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.75rem;
+  box-shadow: 0 14px 40px rgba(15, 23, 42, 0.08);
+  border: 1px solid #e2e8f0;
+}
+
+.card-header h1,
+.card-header h2 {
+  margin: 0 0 0.35rem;
+}
+
+.muted {
+  color: #64748b;
+  margin: 0.25rem 0 0;
+}
+
+.muted.small {
+  font-size: 0.9rem;
+}
+
+.login-form {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.login-form label {
+  display: grid;
+  gap: 0.35rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+input,
+textarea {
+  width: 100%;
+  padding: 0.75rem 0.9rem;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  font-size: 1rem;
+  background: #fff;
+}
+
+textarea {
+  min-height: 160px;
+  font-family: 'SFMono-Regular', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
+  resize: vertical;
+}
+
+button {
+  padding: 0.85rem 1rem;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: #2563eb;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.1s ease;
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 30px rgba(37, 99, 235, 0.25);
+  background: #1d4ed8;
+}
+
+button:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+}
+
+button.secondary {
+  background: transparent;
+  color: #2563eb;
+  border-color: #cbd5e1;
+  box-shadow: none;
+}
+
+.helper {
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+}
+
+.helper code {
+  background: #e2e8f0;
+  padding: 0.1rem 0.35rem;
+  border-radius: 6px;
+}
+
+.error {
+  margin-top: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecdd3;
+}
+
+.token-box {
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.token-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.copy-message {
+  color: #16a34a;
+  font-weight: 700;
+}
+
+.result-actions {
+  margin-top: 1rem;
+  display: flex;
+  justify-content: flex-end;
+}
+
+@media (max-width: 640px) {
+  .app-header {
+    padding: 2rem 1rem 0.5rem;
+  }
+
+  main {
+    padding: 1.25rem 1rem 2rem;
+  }
+}
