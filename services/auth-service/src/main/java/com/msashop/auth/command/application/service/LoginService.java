@@ -65,7 +65,7 @@ public class LoginService implements LoginUseCase {
         }
 
         // 4) Access Token 발급 (roles는 1차는 고정, 이후 user_role_map 조인으로 확장)
-        String accessToken = issueDevToken(String.valueOf(user.userId()), List.of("ROLE_USER"));
+        String accessToken = issueDevToken(String.valueOf(user.userId()), List.of("ROLE_ADMIN"));
 
         // 5) Refresh Token 원문 생성(클라이언트 전달용)
         var generated = refreshTokenGenerator.generate();

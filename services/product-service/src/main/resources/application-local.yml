@@ -1,9 +1,8 @@
 server:
   port: 8082
-  servlet:
-    context-path: /api/product
 
 spring:
+  debug: true
   application:
     name: product-service
   flyway:
@@ -40,3 +39,8 @@ app:
 security:
   jwt:
     secret: ${JWT_SECRET:local-dev-secret-change-me}  # (??? ??? ?? ???? ??)
+
+logging:
+  level:
+    org.springframework.security: DEBUG
+    org.springframework.web.server.adapter.HttpWebHandlerAdapter: DEBUG

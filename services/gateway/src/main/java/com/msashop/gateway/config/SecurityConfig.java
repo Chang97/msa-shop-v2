@@ -2,45 +2,49 @@ package com.msashop.gateway.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
+import org.springframework.http.HttpMethod;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.web.server.authentication.HttpStatusServerEntryPoint;
+import org.springframework.security.web.server.authorization.HttpStatusServerAccessDeniedHandler;
+import org.springframework.http.HttpStatus;
 
-/**
- * Gateway는 "1차 인증(토큰 유효성)"만 빠르게 컷해주는 역할이 핵심.
- * - 외부 요청은 모두 Gateway를 지나감
- * - JWT 검증(서명/만료) 실패 시 여기서 바로 401
- * - 공개 경로(/api/auth/**)는 인증 없이 통과
- * - 서비스 내부에서는 더 세밀한 권한 체크(@PreAuthorize)를 수행
- */
 @Configuration
 public class SecurityConfig {
 
-    /**
-     * WebFlux 기반 Spring Security 설정
-     * authorizeExchange:
-     *  - permitAll: 로그인/토큰발급 등 공개 API
-     *  - authenticated: 그 외는 JWT 필요
-     *
-     * oauth2ResourceServer().jwt():
-     *  - Authorization: Bearer <token>을 자동 인식하여 검증
-     */
     @Bean
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
         return http
-                // API Gateway는 세션 기반이 아니므로 CSRF는 보통 끔(토큰 기반)
+                // stateless gateway
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
-                .cors(cors -> {})
-                // 경로별 접근 제어
+                .httpBasic(ServerHttpSecurity.HttpBasicSpec::disable)
+                .formLogin(ServerHttpSecurity.FormLoginSpec::disable)
+
+                // CORS: globalcors 사용 시에도 withDefaults 권장
+                .cors(Customizer.withDefaults())
+
+                // 인증/인가 실패 시 상태코드 명확화 (디버깅 도움)
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(new HttpStatusServerEntryPoint(HttpStatus.UNAUTHORIZED)) // 401
+                        .accessDeniedHandler(new HttpStatusServerAccessDeniedHandler(HttpStatus.FORBIDDEN)) // 403
+                )
+
                 .authorizeExchange(ex -> ex
-                        // 인증 없이 열어둘 엔드포인트
+                        // preflight
+                        .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        // 공개 API
                         .pathMatchers("/api/auth/**").permitAll()
-                        // 그 외는 전부 인증 필요
+                        .pathMatchers("/actuator/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
+
+                        // 나머지 전부 JWT 필요
                         .anyExchange().authenticated()
                 )
-                // JWT 검증 활성화 (Resource Server 표준)
-                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt -> {}))
+
+                // Authorization: Bearer <token> 검증
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))
+
                 .build();
     }
-
 }

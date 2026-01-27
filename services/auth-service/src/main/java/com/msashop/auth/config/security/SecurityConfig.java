@@ -42,14 +42,15 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
 
                 // CORS는 gateway에서 처리
-                .cors(Customizer.withDefaults())
+                .cors(AbstractHttpConfigurer::disable)
 
                 .authorizeHttpRequests(auth -> auth
                         // 로그인/갱신/로그아웃
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/refresh").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/logout").permitAll()
-
+                        // 운영 필요 시
+                        .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                         // 그 외는 전부 차단 (auth-service의 책임 범위 축소)
                         .anyRequest().denyAll()
                 )
