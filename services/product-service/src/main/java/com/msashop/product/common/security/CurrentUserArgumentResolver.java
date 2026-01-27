@@ -27,7 +27,7 @@ public class CurrentUserArgumentResolver implements HandlerMethodArgumentResolve
     ) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
-        if (!(auth instanceof HeaderAuthenticationToken gat)) {
+        if (!(auth instanceof GatewayAuthenticationToken gat)) {
             return null;
         }
 

@@ -5,8 +5,6 @@ import com.msashop.auth.command.application.port.in.model.LogoutCommand;
 import com.msashop.auth.command.application.port.out.RefreshTokenPort;
 import com.msashop.auth.command.application.service.token.RefreshTokenParser;
 import com.msashop.auth.command.application.service.token.TokenHasher;
-import com.msashop.auth.common.exception.ErrorCode;
-import com.msashop.auth.common.exception.UnauthorizedException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

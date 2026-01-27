@@ -71,6 +71,8 @@ dependencies {
 	implementation "org.bouncycastle:bcprov-jdk18on:1.78.1"
 
 	implementation 'org.flywaydb:flyway-core'
+
+	implementation project(":libs:common-web")
 }
 
 tasks.named('test') {

@@ -3,6 +3,7 @@
 -- =====================================================
 CREATE USER auth_user WITH PASSWORD 'auth_pw';
 CREATE USER auth_test_user WITH PASSWORD 'auth_test_pw';
+CREATE USER user_user WITH PASSWORD 'user_pw';
 CREATE USER product_user WITH PASSWORD 'product_pw';
 CREATE USER order_user WITH PASSWORD 'order_pw';
 CREATE USER payment_user WITH PASSWORD 'payment_pw';
@@ -12,6 +13,7 @@ CREATE USER payment_user WITH PASSWORD 'payment_pw';
 -- =====================================================
 CREATE DATABASE auth_db OWNER auth_user;
 CREATE DATABASE auth_test_db OWNER auth_test_user;
+CREATE DATABASE user_db OWNER user_user;
 CREATE DATABASE product_db OWNER product_user;
 CREATE DATABASE order_db OWNER order_user;
 CREATE DATABASE payment_db OWNER payment_user;
@@ -59,6 +61,13 @@ GRANT USAGE, CREATE ON SCHEMA public TO order_user;
 
 REVOKE CREATE ON SCHEMA public FROM PUBLIC;
 GRANT USAGE, CREATE ON SCHEMA public TO payment_user;
+-- =====================================================
+-- 6) payment_db 권한 설정
+-- =====================================================
+\c user_db
+
+REVOKE CREATE ON SCHEMA public FROM PUBLIC;
+GRANT USAGE, CREATE ON SCHEMA public TO user_user;
 
 -- =====================================================
 -- 완료

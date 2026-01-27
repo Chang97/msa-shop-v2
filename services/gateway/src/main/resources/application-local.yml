@@ -49,6 +49,10 @@ spring:
           predicates:
             - Path=/api/payments/**
 
+        - id: user
+          uri: http://localhost:8085
+          predicates:
+            - Path=/api/users/**
   security:
     oauth2:
       resourceserver:

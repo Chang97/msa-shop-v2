@@ -1,0 +1,40 @@
+package com.msashop.user.command.application.service;
+
+import com.msashop.common.web.exception.CommonErrorCode;
+import com.msashop.common.web.exception.NotFoundException;
+import com.msashop.user.command.application.port.in.DeactivateMeUseCase;
+import com.msashop.user.command.application.port.out.LoadUserPort;
+import com.msashop.user.command.application.port.out.SaveUserPort;
+import com.msashop.user.command.domain.model.User;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * DeactivateMe 유스케이스 구현체.
+ */
+@Service
+@RequiredArgsConstructor
+public class DeactivateMeService implements DeactivateMeUseCase {
+
+    private final LoadUserPort loadUserPort;
+    private final SaveUserPort saveUserPort;
+
+    /**
+     * 내 계정 비활성화는 CUD이므로 트랜잭션이 필요하다.
+     */
+    @Override
+    @Transactional
+    public void deactivateMe(Long userId) {
+        User user = loadUserPort.findById(userId)
+                .orElseThrow(() -> new NotFoundException(
+                        CommonErrorCode.COMMON_NOT_FOUND,
+                        "User not found. userId=" + userId
+                ));
+
+        user.deactivate();
+
+        // 도메인 상태 변경을 영속화
+        saveUserPort.save(user);
+    }
+}

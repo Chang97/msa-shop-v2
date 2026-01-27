@@ -8,10 +8,10 @@ import com.msashop.auth.command.application.service.token.RefreshTokenGenerator;
 import com.msashop.auth.command.application.service.token.RefreshTokenParser;
 import com.msashop.auth.command.application.service.token.TokenHasher;
 import com.msashop.auth.command.application.service.token.TokenIssuer;
-import com.msashop.auth.common.exception.ConflictException;
-import com.msashop.auth.common.exception.ErrorCode;
-import com.msashop.auth.common.exception.UnauthorizedException;
 import com.msashop.auth.config.auth.RefreshTokenProperties;
+import com.msashop.common.web.exception.AuthErrorCode;
+import com.msashop.common.web.exception.ConflictException;
+import com.msashop.common.web.exception.UnauthorizedException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -48,32 +48,32 @@ public class RefreshService implements RefreshUseCase {
         if (storedActive.isEmpty()) {
             var storedAny = refreshTokenPort.findByTokenId(tokenId);
             if (storedAny.isEmpty()) {
-                throw new UnauthorizedException(ErrorCode.AUTH_INVALID_CREDENTIALS);
+                throw new UnauthorizedException(AuthErrorCode.AUTH_INVALID_CREDENTIALS);
             }
 
             var t = storedAny.get();
             // 만료
             if (t.expiresAt().isBefore(now) || t.expiresAt().equals(now)) {
-                throw new UnauthorizedException(ErrorCode.AUTH_REFRESH_EXPIRED);
+                throw new UnauthorizedException(AuthErrorCode.AUTH_REFRESH_EXPIRED);
             }
 
             // revoke 상태라면: rotate로 인한 revoke(재사용) vs logout revoke(단순 revoke)
             if (t.revoked()) {
                 if (t.replacedByTokenId() != null && !t.replacedByTokenId().isBlank()) {
-                    throw new ConflictException(ErrorCode.AUTH_REFRESH_REPLAY); // old token reuse
+                    throw new ConflictException(AuthErrorCode.AUTH_REFRESH_REPLAY);
                 }
-                throw new UnauthorizedException(ErrorCode.AUTH_REFRESH_REVOKED); // logout 등
+                throw new UnauthorizedException(AuthErrorCode.AUTH_REFRESH_REVOKED); // logout 등
             }
 
             // 이론상 여기로 오면 findActiveByTokenId 구현이 active 조건을 잘못 걸었을 가능성
-            throw new UnauthorizedException(ErrorCode.AUTH_INVALID_CREDENTIALS);
+            throw new UnauthorizedException(AuthErrorCode.AUTH_INVALID_CREDENTIALS);
         }
         var stored = storedActive.get();
 
         // 4) hash 비교로 위변조/오입력 방지
         if (!rawHash.equals(stored.tokenHash())) {
             // 1차: 단순 에러. (2차: 재사용/탈취 탐지 후 전체 세션 폐기 같은 대응 가능)
-            throw new UnauthorizedException(ErrorCode.AUTH_INVALID_CREDENTIALS);
+            throw new UnauthorizedException(AuthErrorCode.AUTH_INVALID_CREDENTIALS);
         }
 
         // 5) rotate: 기존 refresh revoke 처리

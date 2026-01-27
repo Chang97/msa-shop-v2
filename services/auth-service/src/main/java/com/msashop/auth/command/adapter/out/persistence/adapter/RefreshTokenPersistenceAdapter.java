@@ -3,8 +3,8 @@ package com.msashop.auth.command.adapter.out.persistence.adapter;
 import com.msashop.auth.command.adapter.out.persistence.mapper.RefreshTokenEntityMapper;
 import com.msashop.auth.command.adapter.out.persistence.repo.RefreshTokenJpaRepository;
 import com.msashop.auth.command.application.port.out.RefreshTokenPort;
-import com.msashop.auth.common.exception.ErrorCode;
-import com.msashop.auth.common.exception.NotFoundException;
+import com.msashop.common.web.exception.CommonErrorCode;
+import com.msashop.common.web.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,7 +43,7 @@ public class RefreshTokenPersistenceAdapter implements RefreshTokenPort {
     @Transactional
     public void revoke(String tokenId, Instant revokedAt, String replacedByTokenId) {
         var entity = refreshTokenJpaRepository.findByTokenId(tokenId)
-                .orElseThrow(() -> new NotFoundException(ErrorCode.COMMON_NOT_FOUND, "Refresh token not found: " + tokenId));
+                .orElseThrow(() -> new NotFoundException(CommonErrorCode.COMMON_NOT_FOUND, "Refresh token not found: " + tokenId));
         // revoked=true이면 revoked_at은 반드시 있어야 함
         entity.revoke(revokedAt, replacedByTokenId);
     }
@@ -52,7 +52,7 @@ public class RefreshTokenPersistenceAdapter implements RefreshTokenPort {
     @Transactional
     public void markUsed(String tokenId, Instant lastUsedAt) {
         var entity = refreshTokenJpaRepository.findByTokenId(tokenId)
-                .orElseThrow(() -> new NotFoundException(ErrorCode.COMMON_NOT_FOUND, "Refresh token not found: " + tokenId));
+                .orElseThrow(() -> new NotFoundException(CommonErrorCode.COMMON_NOT_FOUND, "Refresh token not found: " + tokenId));
         entity.markUsed(lastUsedAt);
     }
 }

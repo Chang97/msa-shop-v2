@@ -43,7 +43,7 @@ public class GatewayAuthHeaderFilter extends OncePerRequestFilter {
         if (SecurityContextHolder.getContext().getAuthentication() == null) {
             if (userId != null && !userId.isBlank()) {
                 List<SimpleGrantedAuthority> authorities = parseAuthorities(rolesHeader);
-                var auth = new HeaderAuthenticationToken(userId, authorities);
+                var auth = new GatewayAuthenticationToken(userId, authorities);
                 SecurityContextHolder.getContext().setAuthentication(auth);
             }
         }
