@@ -1,6 +1,9 @@
 server:
   port: 8085
 
+clients:
+  auth-service:
+    base-url: http://localhost:8081
 spring:
   debug: true
   application:
@@ -39,6 +42,9 @@ app:
 security:
   jwt:
     secret: ${JWT_SECRET:local-dev-secret-change-me}  # (??? ??? ?? ???? ??)
+  internal:
+    header-name: X-Internal-Secret
+    service-secret: local-internal-secret
 
 logging:
   level:

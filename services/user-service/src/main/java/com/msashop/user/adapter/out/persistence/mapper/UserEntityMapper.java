@@ -6,8 +6,8 @@ import com.msashop.user.domain.model.User;
 /**
  * JPA Entity <-> Domain 매핑.
  *
- * - 조회(load) 시: entity -> domain
- * - 저장(save) 시: domain -> entity(기존 entity에 반영)
+ * - 조회(load) 시 entity -> domain
+ * - 저장(save) 시 domain -> entity(기존 entity에 반영)
  */
 public final class UserEntityMapper {
 
@@ -15,12 +15,16 @@ public final class UserEntityMapper {
 
     /**
      * Entity -> Domain (rehydrate)
-     * - 영속 엔티티를 도메인 애그리거트로 복원한다.
+     * - 생성자 계약에 맞춰 "최소 상태"로 복원.
      */
     public static User toDomain(UserJpaEntity e) {
-        // 도메인 생성자 계약에 맞춰 "최소 상태"만 복원
         return new User(
                 e.getUserId(),
+                e.getAuthUserId(),
+                e.getUserName(),
+                e.getEmpNo(),
+                e.getPstnName(),
+                e.getTel(),
                 Boolean.TRUE.equals(e.getUseYn()),
                 e.getUpdatedAt(),
                 e.getUpdatedBy()
@@ -28,7 +32,7 @@ public final class UserEntityMapper {
     }
 
     /**
-     * Domain 상태를 "기존 엔티티"에 반영한다.
+     * Domain 상태를 기존 엔티티에 반영한다.
      */
     public static void applyTo(User domain, UserJpaEntity entity) {
         entity.changeUseYn(domain.isUseYn());
@@ -38,3 +42,4 @@ public final class UserEntityMapper {
         entity.changeTel(domain.getTel());
     }
 }
+

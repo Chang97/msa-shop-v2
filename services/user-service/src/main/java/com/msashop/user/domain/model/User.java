@@ -10,6 +10,7 @@ import java.util.Objects;
 public class User {
 
     private final Long userId;
+    private final Long authUserId;
 
     // profile
     private String userName;
@@ -29,8 +30,23 @@ public class User {
      * - 조회/수정/비활성화의 기준이 되는 필드만 우선 받는다.
      * - 나머지 프로필 값들은 팩토리/매퍼에서 세팅하거나, 별도 생성자/정적 팩토리로 확장한다.
      */
-    public User(Long userId, boolean useYn, Instant updatedAt, Long updatedBy) {
+    public User(
+            Long userId,
+            Long authUserId,
+            String userName,
+            String empNo,
+            String pstnName,
+            String tel,
+            boolean useYn,
+            Instant updatedAt,
+            Long updatedBy
+    ) {
         this.userId = Objects.requireNonNull(userId, "userId");
+        this.authUserId = authUserId;
+        this.userName = userName;
+        this.empNo = empNo;
+        this.pstnName = pstnName;
+        this.tel = tel;
         this.useYn = useYn;
         this.updatedAt = updatedAt;
         this.updatedBy = updatedBy;
@@ -38,6 +54,7 @@ public class User {
 
     // ---------- getters (스타일 통일) ----------
     public Long getUserId() { return userId; }
+    public Long getAuthUserId() { return authUserId; }
     public String getUserName() { return userName; }
     public String getEmpNo() { return empNo; }
     public String getPstnName() { return pstnName; }

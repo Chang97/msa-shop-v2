@@ -35,4 +35,8 @@ public class AuthUserCredentialJpaEntity extends BaseAuditEntity {
     @Builder.Default
     @Column(name = "enabled", nullable = false)
     private Boolean enabled = true;
+
+    public void disable() {
+        enabled = false;
+    }
 }

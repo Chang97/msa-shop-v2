@@ -270,6 +270,20 @@ button.secondary {
   flex-wrap: wrap;
 }
 
+.form-actions.danger {
+  justify-content: flex-start;
+}
+
+button.danger {
+  background: #ef4444;
+  border-color: #ef4444;
+}
+
+button.danger:hover:not(:disabled) {
+  background: #dc2626;
+  box-shadow: 0 10px 30px rgba(239, 68, 68, 0.25);
+}
+
 @media (max-width: 640px) {
   .app-header {
     padding: 2rem 1rem 0.5rem;

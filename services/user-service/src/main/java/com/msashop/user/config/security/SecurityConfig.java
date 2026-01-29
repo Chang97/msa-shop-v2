@@ -16,7 +16,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http, GatewayAuthHeaderFilter gatewayAuthHeaderFilter) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                            GatewayAuthHeaderFilter gatewayAuthHeaderFilter,
+                                            InternalSecretFilter internalSecretFilter) throws Exception {
         return http
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .csrf(AbstractHttpConfigurer::disable)
@@ -26,13 +28,14 @@ public class SecurityConfig {
                 // 필요 시 actuator 허용
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/internal/users").permitAll()
+                        .requestMatchers("/internal/**").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                         .anyRequest().authenticated()
                 )
 
                 // 헤더 기반 인증 필터 주입 (인증 필터보다 앞에 두는게 안전)
                 .addFilterBefore(gatewayAuthHeaderFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(internalSecretFilter, UsernamePasswordAuthenticationFilter.class)
 
                 .build();
     }
