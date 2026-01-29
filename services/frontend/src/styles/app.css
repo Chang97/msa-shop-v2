@@ -29,6 +29,14 @@ body {
   text-align: center;
 }
 
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
 .brand {
   font-size: 1.75rem;
   font-weight: 700;
@@ -38,6 +46,32 @@ body {
   margin: 0.35rem 0 0;
   color: #475569;
   font-size: 1rem;
+}
+
+.nav-links {
+  margin-top: 1rem;
+  display: inline-flex;
+  gap: 0.75rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.nav-links a {
+  color: #2563eb;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 0.35rem 0.6rem;
+  border-radius: 8px;
+}
+
+.nav-links a.router-link-active {
+  background: #e0e7ff;
+}
+
+.nav-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 
 main {
@@ -148,6 +182,15 @@ button.secondary {
   border-radius: 6px;
 }
 
+.success {
+  margin-top: 0.75rem;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  background: #ecfdf3;
+  color: #15803d;
+  border: 1px solid #bbf7d0;
+}
+
 .error {
   margin-top: 0.75rem;
   padding: 0.85rem 1rem;
@@ -179,6 +222,52 @@ button.secondary {
   margin-top: 1rem;
   display: flex;
   justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.profile-layout {
+  width: min(960px, 100%);
+}
+
+.profile-content {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+}
+
+.info-card {
+  padding: 0.85rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.label {
+  margin: 0;
+  color: #475569;
+  font-size: 0.95rem;
+}
+
+.value {
+  margin: 0.15rem 0 0;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.empty-state {
+  margin-top: 0.5rem;
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  flex-wrap: wrap;
 }
 
 @media (max-width: 640px) {

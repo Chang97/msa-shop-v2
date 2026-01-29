@@ -10,19 +10,19 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 
 /**
- * auth-service 보안 설정(최소 구성)
+ * auth-service 蹂댁븞 ?ㅼ젙(理쒖냼 援ъ꽦)
  *
- * 역할:
- * - auth-service는 "발급/회전/폐기"만 담당
- * - access token 검증(Resource Server)은 Gateway에서 수행
+ * ??븷:
+ * - auth-service??"諛쒓툒/?뚯쟾/?먭린"留??대떦
+ * - access token 寃利?Resource Server)? Gateway?먯꽌 ?섑뻾
  *
- * 정책:
- * - 세션/폼로그인/Basic 비활성화
- * - CSRF는 auth API에 대해서는 disable(토큰 기반 + refresh는 HttpOnly cookie)
- * - /api/auth/login, /api/auth/refresh, /api/auth/logout 만 공개
- * - 나머지 요청은 404/403로 막아 서비스 면적 축소
+ * ?뺤콉:
+ * - ?몄뀡/?쇰줈洹몄씤/Basic 鍮꾪솢?깊솕
+ * - CSRF??auth API????댁꽌??disable(?좏겙 湲곕컲 + refresh??HttpOnly cookie)
+ * - /api/auth/login, /api/auth/refresh, /api/auth/logout 留?怨듦컻
+ * - ?섎㉧吏 ?붿껌? 404/403濡?留됱븘 ?쒕퉬??硫댁쟻 異뺤냼
  *
- * 내부 서비스 호출(X-Internal-Secret) 같은 건 나중에 별도 필터로 추가할수도?
+ * ?대? ?쒕퉬???몄텧(X-Internal-Secret) 媛숈? 嫄??섏쨷??蹂꾨룄 ?꾪꽣濡?異붽??좎닔??
  */
 @Configuration
 public class SecurityConfig {
@@ -30,28 +30,29 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
-                // 세션 미사용
+                // ?몄뀡 誘몄궗??
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // 기본 로그인/베이직 인증 끄기 (이거 안 끄면 의도치 않게 401 유발하는 경우 많음)
+                // 湲곕낯 濡쒓렇??踰좎씠吏??몄쬆 ?꾧린 (?닿굅 ???꾨㈃ ?섎룄移??딄쾶 401 ?좊컻?섎뒗 寃쎌슦 留롮쓬)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
-                .logout(AbstractHttpConfigurer::disable) // /api/auth/logout 직접 구현
+                .logout(AbstractHttpConfigurer::disable) // /api/auth/logout 吏곸젒 援ы쁽
 
-                // CSRF: auth API는 stateless + cookie refresh지만 SameSite/HttpOnly로 방어
+                // CSRF: auth API??stateless + cookie refresh吏留?SameSite/HttpOnly濡?諛⑹뼱
                 .csrf(AbstractHttpConfigurer::disable)
 
-                // CORS는 gateway에서 처리
+                // CORS??gateway?먯꽌 泥섎━
                 .cors(AbstractHttpConfigurer::disable)
 
                 .authorizeHttpRequests(auth -> auth
-                        // 로그인/갱신/로그아웃
+                        // 濡쒓렇??媛깆떊/濡쒓렇?꾩썐
                         .requestMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/refresh").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/logout").permitAll()
-                        // 운영 필요 시
+                        .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
+                        // ?댁쁺 ?꾩슂 ??
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
-                        // 그 외는 전부 차단 (auth-service의 책임 범위 축소)
+                        // 洹??몃뒗 ?꾨? 李⑤떒 (auth-service??梨낆엫 踰붿쐞 異뺤냼)
                         .anyRequest().denyAll()
                 )
                 .build();

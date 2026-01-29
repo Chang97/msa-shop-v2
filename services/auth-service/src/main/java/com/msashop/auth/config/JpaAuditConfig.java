@@ -18,7 +18,7 @@ public class JpaAuditConfig {
         return () -> Optional.ofNullable(SecurityContextHolder.getContext().getAuthentication())
                 .filter(Authentication::isAuthenticated)
                 .map(auth -> {
-                    // auth.getName()이 userId 문자열(sub)라고 가정
+                    // auth.getName()??authUserId 臾몄옄??sub)?쇨퀬 媛??
                     try { return Long.parseLong(auth.getName()); }
                     catch (Exception e) { return null; }
                 });

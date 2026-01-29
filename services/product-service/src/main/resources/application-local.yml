@@ -12,9 +12,9 @@ spring:
 
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:15432/user_db
-    username: user_user
-    password: user_pw
+    url: jdbc:postgresql://localhost:15432/product_db
+    username: product_user
+    password: product_pw
     hikari:
       maximum-pool-size: 10
       minimum-idle: 2
@@ -42,5 +42,6 @@ security:
 
 logging:
   level:
+    org.flywaydb: DEBUG
     org.springframework.security: DEBUG
     org.springframework.web.server.adapter.HttpWebHandlerAdapter: DEBUG

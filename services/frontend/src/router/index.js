@@ -7,6 +7,16 @@ const routes = [
     component: () => import('@/pages/LoginPage.vue')
   },
   {
+    path: '/register',
+    name: 'register',
+    component: () => import('@/pages/RegisterPage.vue')
+  },
+  {
+    path: '/me',
+    name: 'me',
+    component: () => import('@/pages/ProfilePage.vue')
+  },
+  {
     path: '/',
     redirect: '/login'
   },

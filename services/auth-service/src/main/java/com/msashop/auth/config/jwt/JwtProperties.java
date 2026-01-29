@@ -4,12 +4,12 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.core.io.Resource;
 
 /**
- * JWT 관련 설정을 application.yml에서 바인딩 받는 설정 객체.
+ * JWT 愿???ㅼ젙??application.yml?먯꽌 諛붿씤??諛쏅뒗 ?ㅼ젙 媛앹껜.
  *
  * - prefix: security.jwt
- * - Resource 타입을 쓰면 classpath:/file:/ 등 다양한 위치의 키 파일을 유연하게 읽을 수 있음.
+ * - Resource ??낆쓣 ?곕㈃ classpath:/file:/ ???ㅼ뼇???꾩튂?????뚯씪???좎뿰?섍쾶 ?쎌쓣 ???덉쓬.
  *
- * 예)
+ * ??
  * security:
  *   jwt:
  *     issuer: auth-service

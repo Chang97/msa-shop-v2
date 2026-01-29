@@ -24,13 +24,13 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
 
 /**
- * Auth 서비스에서 RS256 JWT를 "발급"하기 위한 설정.
+ * Auth ?쒕퉬?ㅼ뿉??RS256 JWT瑜?"諛쒓툒"?섍린 ?꾪븳 ?ㅼ젙.
  *
- * 핵심:
- * - RS256은 "비대칭키 서명"이므로 Auth는 private key로 서명(JWT 발급)하고
- * - Gateway/다른 서비스는 public key로 검증만 수행
+ * ?듭떖:
+ * - RS256? "鍮꾨?移?궎 ?쒕챸"?대?濡?Auth??private key濡??쒕챸(JWT 諛쒓툒)?섍퀬
+ * - Gateway/?ㅻⅨ ?쒕퉬?ㅻ뒗 public key濡?寃利앸쭔 ?섑뻾
  *
- * 여기서는 Nimbus(JOSE 라이브러리)를 사용해 JwtEncoder를 구성한다.
+ * ?ш린?쒕뒗 Nimbus(JOSE ?쇱씠釉뚮윭由?瑜??ъ슜??JwtEncoder瑜?援ъ꽦?쒕떎.
  */
 @Configuration
 @EnableConfigurationProperties(JwtProperties.class)
@@ -38,15 +38,15 @@ public class JwtConfig {
 
     @Bean
     public JwtEncoder jwtEncoder(JwtProperties props) throws Exception {
-        // PEM 파일을 읽어서 JDK RSA Key 객체로 변환
+        // PEM ?뚯씪???쎌뼱??JDK RSA Key 媛앹껜濡?蹂??
         RSAPrivateKey priv = (RSAPrivateKey) readPrivateKey(props.privateKeyLocation());
         RSAPublicKey pub = (RSAPublicKey) readPublicKey(props.publicKeyLocation());
         /*
-         * JWK(JSON Web Key): 키를 JSON 표현으로 다루기 위한 표준 포맷.
-         * NimbusJwtEncoder는 JWKSource를 받아 서명에 사용한다.
+         * JWK(JSON Web Key): ?ㅻ? JSON ?쒗쁽?쇰줈 ?ㅻ（湲??꾪븳 ?쒖? ?щ㎎.
+         * NimbusJwtEncoder??JWKSource瑜?諛쏆븘 ?쒕챸???ъ슜?쒕떎.
          *
-         * - pub: 검증 및 (추후 JWKS 제공 시) 노출 가능
-         * - priv: 절대 외부 노출 금지 (Auth 내부에서만 보관)
+         * - pub: 寃利?諛?(異뷀썑 JWKS ?쒓났 ?? ?몄텧 媛??
+         * - priv: ?덈? ?몃? ?몄텧 湲덉? (Auth ?대??먯꽌留?蹂닿?)
          */
         JWK jwk = new RSAKey.Builder(pub).privateKey(priv).build();
         JWKSource<SecurityContext> jwkSource = new ImmutableJWKSet<>(new JWKSet(jwk));
@@ -54,16 +54,16 @@ public class JwtConfig {
     }
 
     /**
-     * PEM(텍스트) -> DER(bytes) -> RSAPrivateKey 변환
+     * PEM(?띿뒪?? -> DER(bytes) -> RSAPrivateKey 蹂??
      *
-     * PEM은 "-----BEGIN PRIVATE KEY-----" 헤더/푸터 + 개행이 포함된 텍스트 포맷이라
-     * KeyFactory로 읽기 전에:
-     *  1) 헤더/푸터 제거
-     *  2) 공백/개행 제거
-     *  3) Base64 디코딩
-     * 과정이 필요하다.
+     * PEM? "-----BEGIN PRIVATE KEY-----" ?ㅻ뜑/?명꽣 + 媛쒗뻾???ы븿???띿뒪???щ㎎?대씪
+     * KeyFactory濡??쎄린 ?꾩뿉:
+     *  1) ?ㅻ뜑/?명꽣 ?쒓굅
+     *  2) 怨듬갚/媛쒗뻾 ?쒓굅
+     *  3) Base64 ?붿퐫??
+     * 怨쇱젙???꾩슂?섎떎.
      *
-     * 주의: 이 코드는 PKCS#8 ("BEGIN PRIVATE KEY") 형태를 전제로 한다.
+     * 二쇱쓽: ??肄붾뱶??PKCS#8 ("BEGIN PRIVATE KEY") ?뺥깭瑜??꾩젣濡??쒕떎.
      */
     private PrivateKey readPrivateKey(Resource resource) throws Exception {
         String pem = new String(resource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);
@@ -75,16 +75,16 @@ public class JwtConfig {
     }
 
     /**
-     * PEM(텍스트) -> DER(bytes) -> RSAPublicKey 변환
+     * PEM(?띿뒪?? -> DER(bytes) -> RSAPublicKey 蹂??
      *
-     * PEM은 "-----BEGIN PUBLIC KEY-----" 헤더/푸터 + 개행이 포함된 텍스트 포맷이라
-     *      * KeyFactory로 읽기 전에:
-     *      *  1) 헤더/푸터 제거
-     *      *  2) 공백/개행 제거
-     *      *  3) Base64 디코딩
-     *      * 과정이 필요하다.
+     * PEM? "-----BEGIN PUBLIC KEY-----" ?ㅻ뜑/?명꽣 + 媛쒗뻾???ы븿???띿뒪???щ㎎?대씪
+     *      * KeyFactory濡??쎄린 ?꾩뿉:
+     *      *  1) ?ㅻ뜑/?명꽣 ?쒓굅
+     *      *  2) 怨듬갚/媛쒗뻾 ?쒓굅
+     *      *  3) Base64 ?붿퐫??
+     *      * 怨쇱젙???꾩슂?섎떎.
      *
-     * 주의: 이 코드는 X.509 SubjectPublicKeyInfo ("BEGIN PUBLIC KEY") 형태를 전제로 한다.
+     * 二쇱쓽: ??肄붾뱶??X.509 SubjectPublicKeyInfo ("BEGIN PUBLIC KEY") ?뺥깭瑜??꾩젣濡??쒕떎.
      */
     private PublicKey readPublicKey(Resource resource) throws Exception {
         String pem = new String(resource.getInputStream().readAllBytes(), StandardCharsets.UTF_8);

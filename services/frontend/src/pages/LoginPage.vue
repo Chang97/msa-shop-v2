@@ -44,6 +44,10 @@
       >
         {{ error }}
       </p>
+      <p class="muted small">
+        계정이 없나요?
+        <RouterLink to="/register">회원가입 하러가기</RouterLink>
+      </p>
     </div>
 
     <div
@@ -83,6 +87,13 @@
         >
           다시 로그인하기
         </button>
+        <button
+          type="button"
+          class="secondary"
+          @click="goProfile"
+        >
+          내 정보 보기
+        </button>
       </div>
     </div>
   </section>
@@ -90,8 +101,10 @@
 
 <script setup>
 import { reactive, ref } from 'vue';
+import { RouterLink, useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 
+const router = useRouter();
 const user = useUserStore();
 const error = ref('');
 const copyMessage = ref('');
@@ -112,9 +125,13 @@ const copyToken = async () => {
   if (!user.accessToken) return;
   try {
     await navigator.clipboard.writeText(user.accessToken);
-    copyMessage.value = '클립보드에 복사되었습니다.';
+    copyMessage.value = '클립보드에 복사했어요';
   } catch (err) {
     copyMessage.value = '복사에 실패했습니다. 수동으로 복사해주세요.';
   }
+};
+
+const goProfile = () => {
+  router.push({ name: 'me' });
 };
 </script>

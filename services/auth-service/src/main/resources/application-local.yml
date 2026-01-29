@@ -4,6 +4,10 @@
 server:
   port: 8081                         # auth-service ?? ??
 
+clients:
+  user-service:
+    base-url: http://localhost:8085
+
 spring:
   application:
     name: auth-service               # ??? ???(??/????/????? ???? ?? ??)
@@ -56,6 +60,8 @@ decorator:
 logging:
   level:
     p6spy: INFO                       # p6spy ?? ??(?? ? DEBUG?)
+    org.springframework.security: DEBUG
+
 
 # =========================
 # app: auth ?? ?? (Redis ?/TTL ?)
@@ -100,3 +106,4 @@ security:
     access-token-ttl-seconds: 1800
     private-key-location: classpath:keys/jwt-private.pem
     public-key-location: classpath:keys/jwt-public.pem
+

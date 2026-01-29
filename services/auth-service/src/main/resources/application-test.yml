@@ -1,8 +1,9 @@
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:15432/auth_test_db
-    username: auth_test_user
-    password: auth_test_pw
+    url: jdbc:h2:mem:auth_test_db;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: 
   flyway:
     enabled: true
     baseline-on-migrate: true

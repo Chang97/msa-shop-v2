@@ -6,6 +6,7 @@ public enum AuthErrorCode implements ErrorCode {
 
     AUTH_INVALID_CREDENTIALS("AUTH_001", 401, "Invalid credentials."),
     AUTH_DISABLED_USER("AUTH_002", 401, "User is disabled"),
+    AUTH_NOT_MATCHED_PASSWORD("AUTH_002", 401, "User Password not matched"),
     AUTH_REFRESH_MISSING("AUTH_010", 401, "Refresh token is missing."),
     AUTH_REFRESH_EXPIRED("AUTH_011", 401, "Refresh token expired."),
     AUTH_REFRESH_REVOKED("AUTH_012", 401, "Refresh token revoked."),
