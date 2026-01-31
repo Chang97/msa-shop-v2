@@ -1,5 +1,7 @@
 package com.msashop.gateway.filter;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.Ordered;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.core.Authentication;
@@ -15,7 +17,7 @@ import java.util.List;
 
 @Component
 public class AuthContextHeaderFilter implements WebFilter, Ordered {
-
+    private final Logger log = LoggerFactory.getLogger(this.getClass().getSimpleName());
     @Override
     public int getOrder() {
         // SecurityWebFilterChain 이후에 실행되게 적당히 뒤로

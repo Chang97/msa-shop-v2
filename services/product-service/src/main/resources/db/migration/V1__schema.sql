@@ -9,6 +9,7 @@ create table if not exists product (
     product_name varchar(120) not null,
     price numeric(12,2) not null check (price >= 0),
     stock int not null check (stock >= 0),
+    status varchar(20) not null default 'ON_SALE',
     created_at timestamptz NOT NULL DEFAULT now(),
     updated_at timestamptz NOT NULL DEFAULT now(),
     created_by bigint,

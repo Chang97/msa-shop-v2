@@ -21,8 +21,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.List;
 import java.util.logging.Logger;
+import java.util.List;
 
 /**
  * 濡쒓렇???좎뒪耳?댁뒪 援ы쁽泥?
@@ -67,7 +67,8 @@ public class LoginService implements LoginUseCase {
         }
 
         // 4) Access Token 諛쒓툒 (roles??1李⑤뒗 怨좎젙, ?댄썑 user_role_map 議곗씤?쇰줈 ?뺤옣)
-        String accessToken = tokenIssuer.issueAccessToken(user.userId(), List.of("ROLE_USER"));
+        List<String> roles = user.roles() == null ? List.of() : user.roles();
+        String accessToken = tokenIssuer.issueAccessToken(user.userId(), roles);
 
         // 5) Refresh Token ?먮Ц ?앹꽦(?대씪?댁뼵???꾨떖??
         var generated = refreshTokenGenerator.generate();
@@ -87,8 +88,5 @@ public class LoginService implements LoginUseCase {
         // 8) ?묐떟: access + refresh(raw)
         return new LoginResult(accessToken, refreshRaw);
     }
-
-    private final JwtEncoder jwtEncoder;
-    private final JwtProperties props;
 }
 

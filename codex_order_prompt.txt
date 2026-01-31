@@ -1,0 +1,101 @@
+﻿[프로젝트] msa-shop-v2 / order-service 기본 골조 생성 (헥사고날 + Domain 사용)
+
+목표:
+- order-service에 “주문 생성/조회/취소(결제 전)” 유스케이스의 기본 골조를 생성한다. (user-service 참고)
+- Command 액션(Create/Cancel)에서는 반드시 domain model(Order, OrderItem)을 사용한다.
+- Persistence/JPA Entity는 adapter/out에서만 사용하고,
+  application/service → domain → port(out) 흐름을 지킨다.
+- SQL/Flyway는 이미 존재하므로 생성하지 않는다.
+- seed 데이터는 로컬 테스트용으로 포함한다.
+
+기술 스택/제약:
+- Spring Boot 3.2.x, Spring MVC
+- Spring Security: Gateway 헤더 기반 인증(CurrentUser 패턴)
+- 헥사고날 아키텍처 준수
+- user-service의 패키지/네이밍/스타일 최대한 유지
+- 공통 모듈 libs/common-web 존재 가정
+- Maven Central 외 repository 추가 금지
+
+====================================================
+1) 디렉토리/패키지 구조 생성
+====================================================
+
+com.msashop.order
+ ├─ adapter
+ │   ├─ in
+ │   │   └─ web
+ │   │       ├─ OrderCommandController.java
+ │   │       ├─ OrderQueryController.java
+ │   │       ├─ dto
+ │   │       │   ├─ CreateOrderRequest.java
+ │   │       │   ├─ CreateOrderResponse.java
+ │   │       │   ├─ OrderResponse.java
+ │   │       │   └─ CancelOrderResponse.java
+ │   │       └─ mapper
+ │   │           ├─ OrderWebCommandMapper.java
+ │   │           └─ OrderWebQueryMapper.java
+ │   └─ out
+ │       ├─ persistence
+ │       │   ├─ adapter
+ │       │   │   ├─ OrderCommandPersistenceAdapter.java
+ │       │   │   └─ OrderQueryPersistenceAdapter.java
+ │       │   ├─ entity
+ │       │   │   ├─ BaseAuditEntity.java
+ │       │   │   ├─ OrderJpaEntity.java
+ │       │   │   ├─ OrderItemJpaEntity.java
+ │       │   │   └─ OrderStatusHistoryJpaEntity.java (스켈레톤)
+ │       │   ├─ repo
+ │       │   │   ├─ OrderCommandJpaRepository.java
+ │       │   │   ├─ OrderQueryJpaRepository.java
+ │       │   │   ├─ OrderItemJpaRepository.java
+ │       │   │   └─ OrderStatusHistoryJpaRepository.java
+ │       │   └─ mapper
+ │       │       └─ OrderEntityMapper.java
+ │       └─ client
+ │           ├─ ProductClientAdapter.java
+ │           └─ dto
+ │               └─ ProductResponse.java
+
+ ├─ application
+ │   ├─ port
+ │   │   ├─ in
+ │   │   │   ├─ CreateOrderUseCase.java
+ │   │   │   ├─ GetOrderUseCase.java
+ │   │   │   ├─ CancelOrderUseCase.java
+ │   │   │   └─ model
+ │   │   │       └─ CreateOrderCommand.java
+ │   │   └─ out
+ │   │       ├─ SaveOrderPort.java
+ │   │       ├─ LoadOrderPort.java
+ │   │       ├─ ProductLookupPort.java
+ │   │       └─ model
+ │   │           └─ ProductSnapshot.java
+ │   └─ service
+ │       ├─ CreateOrderService.java
+ │       ├─ GetOrderService.java
+ │       └─ CancelOrderService.java
+
+ ├─ domain
+ │   ├─ model
+ │   │   ├─ Order.java
+ │   │   ├─ OrderItem.java
+ │   │   ├─ OrderStatus.java
+ │   │   └─ Money.java
+ │   └─ service
+ │       └─ OrderDomainService.java (선택)
+
+ ├─ common
+ │   └─ security
+ │       ├─ CurrentUser.java
+ │       ├─ GatewayAuthenticationToken.java
+ │       ├─ GatewayAuthHeaderFilter.java
+ │       └─ CurrentUserArgumentResolver.java
+
+ └─ config
+     ├─ security
+     │   ├─ SecurityConfig.java
+     │   ├─ InternalSecretFilter.java
+     │   └─ FilterRegistrationConfig.java
+     └─ WebMvcConfig.java
+
+(이하 생략 가능: Domain/Service/Adapter 규칙은 위 내용 그대로 준수, 빌드 가능 상태로 스켈레톤 생성, seed 포함)

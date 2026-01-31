@@ -1,5 +1,6 @@
 package com.msashop.product.common.security;
 
+import com.msashop.product.common.response.CurrentUser;
 import org.springframework.core.MethodParameter;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;

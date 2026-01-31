@@ -27,7 +27,10 @@ public class UserPersistenceAdapter implements LoadUserPort, CredentialPort, Use
     @Override
     public Optional<AuthUserRecord> findByLoginId(String loginId) {
         return credentialRepo.findByLoginId(loginId)
-                .map(AuthUserCredentialMapper::toAuthRecord);
+                .map(e -> AuthUserCredentialMapper.toAuthRecord(
+                        e,
+                        userRoleMapRepo.findRoleNamesByUserId(e.getUserId())
+                ));
     }
 
     @Override
@@ -82,4 +85,3 @@ public class UserPersistenceAdapter implements LoadUserPort, CredentialPort, Use
         }
     }
 }
-

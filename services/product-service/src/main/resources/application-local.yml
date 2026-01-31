@@ -44,4 +44,3 @@ logging:
   level:
     org.flywaydb: DEBUG
     org.springframework.security: DEBUG
-    org.springframework.web.server.adapter.HttpWebHandlerAdapter: DEBUG
