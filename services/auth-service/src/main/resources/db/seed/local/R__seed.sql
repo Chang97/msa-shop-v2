@@ -11,7 +11,7 @@ values
 
 -- Admin credential
 insert into auth_user_credential (email, login_id, password_hash, enabled)
-values ('admin@msashop.local', 'admin', '$argon2id$v=19$m=16384,t=2,p=1$OJ0tCd2hvSn/5ukBSacGmw$d2v0DbDqyk/3I9sSxDP0xIbTxw0CMdefqThx1g6Qvhw', true)
+values ('admin@msashop.local', 'admin', 'argon2Hash=$argon2id$v=19$m=16384,t=2,p=1$7jQIHNJMYKsJ+Xk4f4uFCA$aYgtX0pzx8I/XK8enqexGCRKg4p1lSnXEOZqwfhmDhE', true)
     on conflict (email) do nothing;
 
 -- Admin role mapping
@@ -24,7 +24,7 @@ where c.login_id = 'admin'
 
 -- (선택) 일반 유저 샘플
 insert into auth_user_credential (email, login_id, password_hash, enabled)
-values ('user1@msashop.local', 'user1', '$argon2id$v=19$m=16384,t=2,p=1$OJ0tCd2hvSn/5ukBSacGmw$d2v0DbDqyk/3I9sSxDP0xIbTxw0CMdefqThx1g6Qvhw', true)
+values ('user1@msashop.local', 'user1', 'argon2Hash=$argon2id$v=19$m=16384,t=2,p=1$7jQIHNJMYKsJ+Xk4f4uFCA$aYgtX0pzx8I/XK8enqexGCRKg4p1lSnXEOZqwfhmDhE', true)
     on conflict (email) do nothing;
 
 insert into user_role_map (user_id, role_id)

@@ -8,10 +8,24 @@
         MSA Shop
       </RouterLink>
       <nav>
-        <RouterLink to="/products">상품 목록</RouterLink>
-        <RouterLink to="/cart">장바구니<span v-if="cart.totalQuantity"> ({{ cart.totalQuantity }})</span></RouterLink>
-        <RouterLink v-if="user.isAuthenticated" to="/orders">내 주문</RouterLink>
-        <RouterLink v-if="user.hasRole('ROLE_ADMIN')" to="/products/new">상품 등록</RouterLink>
+        <RouterLink to="/products">
+          상품 목록
+        </RouterLink>
+        <RouterLink to="/cart">
+          장바구니<span v-if="cart.totalQuantity"> ({{ cart.totalQuantity }})</span>
+        </RouterLink>
+        <RouterLink
+          v-if="user.isAuthenticated"
+          to="/orders"
+        >
+          내 주문
+        </RouterLink>
+        <RouterLink
+          v-if="canManageProducts"
+          to="/products/new"
+        >
+          상품 등록
+        </RouterLink>
       </nav>
       <div class="user-area">
         <RouterLink

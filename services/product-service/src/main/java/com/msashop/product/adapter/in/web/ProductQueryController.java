@@ -24,7 +24,7 @@ public class ProductQueryController {
     private final GetProductsUseCase getProductsUseCase;
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('ROLE_USER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_USER','ROLE_ADMIN')")
     public ResponseEntity<List<ProductResponse>> getProducts() {
         List<ProductResponse> responses = getProductsUseCase.getProducts().stream()
                 .map(ProductWebQueryMapper::toResponse)
@@ -33,10 +33,9 @@ public class ProductQueryController {
     }
 
     @GetMapping("/{productId}")
-    @PreAuthorize("hasAnyAuthority('ROLE_USER')")
+    @PreAuthorize("hasAnyAuthority('ROLE_USER','ROLE_ADMIN')")
     public ResponseEntity<ProductResponse> getProduct(@PathVariable Long productId) {
         ProductResult result = getProductUseCase.getProduct(productId);
         return ResponseEntity.ok(ProductWebQueryMapper.toResponse(result));
     }
 }
-

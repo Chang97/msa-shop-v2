@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 
+const PRODUCT_CREATE_PERMISSION = 'PRODUCT_CREATE';
+
 const routes = [
   {
     path: '/login',
@@ -16,25 +18,25 @@ const routes = [
     path: '/products',
     name: 'products-list',
     component: () => import('@/pages/ProductsListPage.vue'),
-    meta: { public: false }
+    meta: { public: true }
   },
   {
     path: '/products/new',
     name: 'products-new',
     component: () => import('@/pages/ProductFormPage.vue'),
-    meta: { requiresAdmin: true }
+    meta: { requiresSeller: true }
   },
   {
     path: '/products/:id',
     name: 'products-detail',
     component: () => import('@/pages/ProductDetailPage.vue'),
-    meta: { public: false }
+    meta: { public: true }
   },
   {
     path: '/cart',
     name: 'cart',
     component: () => import('@/pages/CartPage.vue'),
-    meta: { public: false }
+    meta: { public: true }
   },
   {
     path: '/checkout',
@@ -71,9 +73,16 @@ router.beforeEach(async (to) => {
   if (to.meta.public) return true;
   const user = useUserStore();
   if (!user.isAuthenticated) {
+    try {
+      await user.fetchSession();
+    } catch (error) {
+      return { path: '/login', query: { redirect: to.fullPath } };
+    }
+  }
+  if (!user.isAuthenticated) {
     return { path: '/login', query: { redirect: to.fullPath } };
   }
-  if (to.meta.requiresAdmin && !user.hasRole('ROLE_ADMIN')) {
+  if (to.meta.requiresSeller && !user.hasPermission(PRODUCT_CREATE_PERMISSION)) {
     return { path: '/products' };
   }
   return true;

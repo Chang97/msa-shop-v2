@@ -29,7 +29,6 @@ export const useUserStore = defineStore(
   'user',
   () => {
     const userFieldRefs = createUserFieldRefs();
-    const accessToken = ref('');
     const menuTree = ref([]);
     const accessibleMenus = ref([]);
     const permissions = ref([]);
@@ -40,35 +39,7 @@ export const useUserStore = defineStore(
     const path = ref([]);
     const loading = ref(false);
 
-    const roles = computed(() => {
-      if (!accessToken.value) return [];
-      try {
-        const payload = JSON.parse(atob(accessToken.value.split('.')[1] || '')) || {};
-        const rawRoles = payload.roles || payload.authorities || [];
-        if (Array.isArray(rawRoles)) return rawRoles;
-        if (typeof rawRoles === 'string') return rawRoles.split(',').map((r) => r.trim()).filter(Boolean);
-        return [];
-      } catch (_) {
-        return [];
-      }
-    });
-
-    const isAuthenticated = computed(
-      () => Boolean(accessToken.value) || Boolean(userFieldRefs.loginId.value || userFieldRefs.userId.value)
-    );
-
-    const hasRole = (role) => roles.value.includes(role);
-
-    const setAuthHeader = (token) => {
-      if (token) {
-        http.defaults.headers.common.Authorization = `Bearer ${token}`;
-      } else {
-        delete http.defaults.headers.common.Authorization;
-      }
-    };
-
-    // hydrate auth header if token already persisted
-    setAuthHeader(accessToken.value);
+    const isAuthenticated = computed(() => Boolean(userFieldRefs.loginId.value || userFieldRefs.userId.value));
 
     const leafMenus = computed(() => {
       const leaves = [];
@@ -343,11 +314,6 @@ export const useUserStore = defineStore(
         }
       }
 
-      if (payload.accessToken) {
-        accessToken.value = payload.accessToken;
-        setAuthHeader(accessToken.value);
-      }
-
       sessionChecked.value = true;
     };
 
@@ -361,7 +327,6 @@ export const useUserStore = defineStore(
 
     const clearSession = () => {
       resetUserFields();
-      accessToken.value = '';
       menuTree.value = [];
       accessibleMenus.value = [];
       setPermissions([]);
@@ -420,15 +385,12 @@ export const useUserStore = defineStore(
         await http.post('/auth/logout');
       } finally {
         clearSession();
-        setAuthHeader('');
       }
     };
 
     return {
       ...userFieldRefs,
-      accessToken,
       menuTree,
-      roles,
       accessibleMenus,
       permissions,
       sessionChecked,
@@ -444,7 +406,6 @@ export const useUserStore = defineStore(
       setPermissions,
       hasPermission,
       resolveCurrentMenu,
-      hasRole,
       login,
       fetchSession,
       logout,
@@ -469,8 +430,7 @@ export const useUserStore = defineStore(
             'leafMenuList',
             'currentMenu',
             'path',
-            'sessionChecked',
-            'accessToken'
+            'sessionChecked'
           ]
         }
       ]
