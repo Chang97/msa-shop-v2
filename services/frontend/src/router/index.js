@@ -51,7 +51,7 @@ const routes = [
     redirect: '/checkout'
   },
   {
-    path: '/orders/:id',
+    path: '/orders/:orderId',
     name: 'orders-detail',
     component: () => import('@/pages/OrderDetailPage.vue')
   },

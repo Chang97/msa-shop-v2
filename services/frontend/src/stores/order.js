@@ -23,11 +23,11 @@ export const useOrderStore = defineStore('orders', {
         this.loading = false;
       }
     },
-    async getById(id) {
+    async getById(orderId) {
       this.loading = true;
       this.error = '';
       try {
-        const { data } = await http.get(`/orders/${id}`);
+        const { data } = await http.get(`/orders/${orderId}`);
         this.current = data;
         return data;
       } catch (error) {
@@ -42,7 +42,8 @@ export const useOrderStore = defineStore('orders', {
       this.error = '';
       try {
         const { data } = await http.post('/orders', payload);
-        return data; // { orderId }
+        const orderId = typeof data === 'number' ? data : data?.orderId;
+        return { orderId };
       } catch (error) {
         this.error = error?.message || '주문 생성 실패';
         throw toError(error);
@@ -50,12 +51,12 @@ export const useOrderStore = defineStore('orders', {
         this.loading = false;
       }
     },
-    async cancel(id, reason) {
+    async cancel(orderId, reason) {
       this.loading = true;
       this.error = '';
       try {
-        await http.post(`/orders/${id}/cancel`, { reason });
-        if (this.current && this.current.orderId === Number(id)) {
+        await http.post(`/orders/${orderId}/cancel`, { reason });
+        if (this.current && this.current.orderId === Number(orderId)) {
           this.current.status = 'CANCELLED';
         }
       } catch (error) {
@@ -67,4 +68,3 @@ export const useOrderStore = defineStore('orders', {
     }
   }
 });
-

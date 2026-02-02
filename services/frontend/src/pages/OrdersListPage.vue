@@ -64,4 +64,3 @@ onMounted(load);
 }
 .error { color: #c00; }
 </style>
-

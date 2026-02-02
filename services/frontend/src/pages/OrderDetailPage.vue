@@ -63,13 +63,13 @@ const canCancel = computed(() => {
 });
 
 const load = async () => {
-  await orders.getById(route.params.id);
+  await orders.getById(route.params.orderId);
 };
 
 const cancel = async () => {
   const reason = window.prompt('취소 사유를 입력하세요', '단순 변심');
   if (!reason) return;
-  await orders.cancel(route.params.id, reason);
+  await orders.cancel(route.params.orderId, reason);
   await load();
 };
 
@@ -91,4 +91,3 @@ onMounted(load);
 .error { color: #c00; }
 .danger { background: #c0392b; color: #fff; }
 </style>
-
