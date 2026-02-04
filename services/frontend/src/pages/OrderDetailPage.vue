@@ -3,6 +3,13 @@
     <h2>주문 상세</h2>
     <div class="actions">
       <RouterLink class="secondary" to="/orders">목록으로</RouterLink>
+      <button
+        v-if="canPay"
+        type="button"
+        class="primary"
+        :disabled="orders.loading"
+        @click="pay"
+      >결제하기</button>
       <button v-if="canCancel" type="button" class="danger" :disabled="orders.loading" @click="cancel">주문 취소</button>
     </div>
 
@@ -23,7 +30,7 @@
         <li><strong>메모</strong> {{ orders.current.memo || '-' }}</li>
       </ul>
 
-      <h3>아이템</h3>
+      <h3>내역</h3>
       <table class="simple-table">
         <thead>
           <tr>
@@ -62,14 +69,25 @@ const canCancel = computed(() => {
   return st === 'CREATED' || st === 'PENDING_PAYMENT';
 });
 
+const canPay = computed(() => {
+  const st = orders.current?.status;
+  return st === 'CREATED' || st === 'PENDING_PAYMENT';
+});
+
 const load = async () => {
   await orders.getById(route.params.orderId);
 };
 
 const cancel = async () => {
-  const reason = window.prompt('취소 사유를 입력하세요', '단순 변심');
+  const reason = window.prompt('취소 이유를 입력하세요', '단순 변심');
   if (!reason) return;
   await orders.cancel(route.params.orderId, reason);
+  await load();
+};
+
+const pay = async () => {
+  if (!orders.current) return;
+  await orders.approvePayment(orders.current.orderId, orders.current.totalAmount);
   await load();
 };
 

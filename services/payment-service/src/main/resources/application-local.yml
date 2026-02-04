@@ -1,7 +1,5 @@
 server:
   port: 8084
-  servlet:
-    context-path: /api/payment
 
 spring:
   application:
@@ -28,7 +26,7 @@ spring:
 
 clients:
   order:
-    base-url: ${ORDER_BASE_URL:http://localhost:8080/api/order}
+    base-url: ${ORDER_BASE_URL:http://localhost:8083}
 
 app:
   idempotency:
@@ -36,5 +34,8 @@ app:
     key-prefix: payment:idempotency
 
 security:
+  internal:
+    header-name: X-Internal-Secret
+    service-secret: ${INTERNAL_SERVICE_SECRET:local-internal-secret}
   jwt:
     secret: ${JWT_SECRET:local-dev-secret-change-me}

@@ -147,6 +147,30 @@ public class Order {
         this.status = OrderStatus.CANCELLED;
     }
 
+    public void startPayment() {
+        if (this.status == OrderStatus.PAID) {
+            throw new IllegalStateException("Paid order cannot start payment");
+        }
+        if (this.status == OrderStatus.CANCELLED) {
+            throw new IllegalStateException("Cancelled order cannot start payment");
+        }
+        if (this.status == OrderStatus.CREATED) {
+            this.status = OrderStatus.PENDING_PAYMENT;
+        }
+    }
+
+    public void markPaid() {
+        if (this.status == OrderStatus.CANCELLED) {
+            throw new IllegalStateException("Cancelled order cannot be paid");
+        }
+        if (this.status == OrderStatus.CREATED) {
+            throw new IllegalStateException("Order must start payment before paid");
+        }
+        if (this.status == OrderStatus.PENDING_PAYMENT) {
+            this.status = OrderStatus.PAID;
+        }
+    }
+
     public Long getOrderId() {
         return orderId;
     }
@@ -227,4 +251,3 @@ public class Order {
         return value;
     }
 }
-

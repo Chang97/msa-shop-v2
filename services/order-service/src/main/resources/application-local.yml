@@ -37,5 +37,8 @@ app:
     key-prefix: order:idempotency
 
 security:
+  internal:
+    header-name: X-Internal-Secret
+    service-secret: ${INTERNAL_SERVICE_SECRET:local-internal-secret}
   jwt:
     secret: ${JWT_SECRET:local-dev-secret-change-me}

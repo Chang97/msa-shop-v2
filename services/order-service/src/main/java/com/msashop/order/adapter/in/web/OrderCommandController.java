@@ -5,7 +5,9 @@ import com.msashop.order.adapter.in.web.dto.CreateOrderRequest;
 import com.msashop.order.adapter.in.web.mapper.OrderWebCommandMapper;
 import com.msashop.order.application.port.in.CancelOrderUseCase;
 import com.msashop.order.application.port.in.CreateOrderUseCase;
+import com.msashop.order.application.port.in.PayOrderUseCase;
 import com.msashop.order.application.port.in.model.CancelOrderCommand;
+import com.msashop.order.application.port.in.model.PayOrderCommand;
 import com.msashop.order.common.response.CurrentUser;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +23,7 @@ public class OrderCommandController {
 
     private final CreateOrderUseCase createOrderUseCase;
     private final CancelOrderUseCase cancelOrderUseCase;
+    private final PayOrderUseCase payOrderUseCase;
 
     @PreAuthorize("hasAnyAuthority('ROLE_USER','ROLE_ADMIN')")
     @PostMapping
@@ -28,6 +31,14 @@ public class OrderCommandController {
                                        @Valid @RequestBody CreateOrderRequest request) {
         Long orderId = createOrderUseCase.createOrder(OrderWebCommandMapper.toCommand(currentUser.userId(), request));
         return ResponseEntity.ok(orderId);
+    }
+
+    @PreAuthorize("hasAnyAuthority('ROLE_USER','ROLE_ADMIN')")
+    @PostMapping("/{orderId}/pay")
+    public ResponseEntity<Void> pay(@AuthenticationPrincipal CurrentUser currentUser,
+                                    @PathVariable Long orderId) {
+        payOrderUseCase.payOrder(new PayOrderCommand(orderId, currentUser.userId()));
+        return ResponseEntity.noContent().build();
     }
 
     @PreAuthorize("hasAnyAuthority('ROLE_USER','ROLE_ADMIN')")

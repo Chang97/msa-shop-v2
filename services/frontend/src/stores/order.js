@@ -65,6 +65,29 @@ export const useOrderStore = defineStore('orders', {
       } finally {
         this.loading = false;
       }
+    },
+    async approvePayment(orderId, amount) {
+      this.loading = true;
+      this.error = '';
+      try {
+        const idempotencyKey = typeof crypto?.randomUUID === 'function'
+          ? crypto.randomUUID()
+          : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+        const { data } = await http.post('/payments/approve', {
+          orderId: Number(orderId),
+          amount,
+          idempotencyKey
+        });
+        if (this.current && this.current.orderId === Number(orderId)) {
+          this.current.status = data?.status || this.current.status;
+        }
+        return data;
+      } catch (error) {
+        this.error = error?.message || '결제 처리 실패';
+        throw toError(error);
+      } finally {
+        this.loading = false;
+      }
     }
   }
 });

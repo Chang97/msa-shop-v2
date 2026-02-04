@@ -1,6 +1,6 @@
-package com.msashop.order.config.security;
+package com.msashop.payment.config.security;
 
-import com.msashop.order.common.security.GatewayAuthHeaderFilter;
+import com.msashop.payment.common.security.GatewayAuthHeaderFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -12,30 +12,25 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
-@EnableMethodSecurity // @PreAuthorize 사용
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http,
-                                            GatewayAuthHeaderFilter gatewayAuthHeaderFilter,
-                                            InternalSecretFilter internalSecretFilter) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http, GatewayAuthHeaderFilter gatewayAuthHeaderFilter) throws Exception {
         return http
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .csrf(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
 
-                // 허용: actuator 등
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/internal/**").permitAll()
+                        .requestMatchers("/error").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                         .anyRequest().authenticated()
                 )
 
-                // 헤더 기반 인증 필터 주입 (인증 필터보다 앞에 위치)
                 .addFilterBefore(gatewayAuthHeaderFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(internalSecretFilter, UsernamePasswordAuthenticationFilter.class)
 
                 .build();
     }
