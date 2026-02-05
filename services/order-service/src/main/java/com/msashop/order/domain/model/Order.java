@@ -160,6 +160,9 @@ public class Order {
     }
 
     public void markPaid() {
+        if (this.status == OrderStatus.PAID) {
+            return;
+        }
         if (this.status == OrderStatus.CANCELLED) {
             throw new IllegalStateException("Cancelled order cannot be paid");
         }

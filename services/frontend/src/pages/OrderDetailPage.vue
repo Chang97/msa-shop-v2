@@ -7,7 +7,7 @@
         v-if="canPay"
         type="button"
         class="primary"
-        :disabled="orders.loading"
+        :disabled="payDisabled"
         @click="pay"
       >결제하기</button>
       <button v-if="canCancel" type="button" class="danger" :disabled="orders.loading" @click="cancel">주문 취소</button>
@@ -55,12 +55,15 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue';
+import { computed, onMounted, ref } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
 import { useOrderStore } from '@/stores/order';
 
 const route = useRoute();
 const orders = useOrderStore();
+const paying = ref(false);
+const paymentKey = ref('');
+const paymentOrderId = ref(null);
 
 const formatDate = (val) => (val ? new Date(val).toLocaleString() : '-');
 
@@ -75,7 +78,12 @@ const canPay = computed(() => {
 });
 
 const load = async () => {
-  await orders.getById(route.params.orderId);
+  const data = await orders.getById(route.params.orderId);
+  const loadedOrderId = data?.orderId ?? null;
+  if (paymentOrderId.value !== loadedOrderId) {
+    paymentOrderId.value = loadedOrderId;
+    paymentKey.value = '';
+  }
 };
 
 const cancel = async () => {
@@ -85,10 +93,29 @@ const cancel = async () => {
   await load();
 };
 
+const payDisabled = computed(() => orders.loading || paying.value);
+
+const getIdempotencyKey = () => {
+  if (!orders.current) return '';
+  if (!paymentKey.value) {
+    const uuid = typeof crypto?.randomUUID === 'function'
+      ? crypto.randomUUID()
+      : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    paymentKey.value = `PAY-${orders.current.orderId}-${uuid}`;
+  }
+  return paymentKey.value;
+};
+
 const pay = async () => {
-  if (!orders.current) return;
-  await orders.approvePayment(orders.current.orderId, orders.current.totalAmount);
-  await load();
+  if (!orders.current || payDisabled.value) return;
+  paying.value = true;
+  try {
+    const key = getIdempotencyKey();
+    await orders.approvePayment(orders.current.orderId, orders.current.totalAmount, key);
+    await load();
+  } finally {
+    paying.value = false;
+  }
 };
 
 onMounted(load);

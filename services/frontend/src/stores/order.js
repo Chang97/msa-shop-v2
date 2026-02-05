@@ -66,17 +66,17 @@ export const useOrderStore = defineStore('orders', {
         this.loading = false;
       }
     },
-    async approvePayment(orderId, amount) {
+    async approvePayment(orderId, amount, idempotencyKey) {
       this.loading = true;
       this.error = '';
       try {
-        const idempotencyKey = typeof crypto?.randomUUID === 'function'
-          ? crypto.randomUUID()
-          : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+        const key = idempotencyKey || (typeof crypto?.randomUUID === 'function'
+          ? `PAY-${orderId}-${crypto.randomUUID()}`
+          : `PAY-${orderId}-${Date.now()}-${Math.random().toString(16).slice(2)}`);
         const { data } = await http.post('/payments/approve', {
           orderId: Number(orderId),
           amount,
-          idempotencyKey
+          idempotencyKey: key
         });
         if (this.current && this.current.orderId === Number(orderId)) {
           this.current.status = data?.status || this.current.status;

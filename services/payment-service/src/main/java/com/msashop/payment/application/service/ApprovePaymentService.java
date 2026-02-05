@@ -9,6 +9,7 @@ import com.msashop.payment.application.port.out.RequestOrderPaymentPort;
 import com.msashop.payment.application.port.out.SavePaymentPort;
 import com.msashop.payment.domain.model.PaymentTransaction;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -30,16 +31,18 @@ public class ApprovePaymentService implements ApprovePaymentUseCase {
 
     @Override
     public PaymentResult approve(ApprovePaymentCommand command) {
-        requestOrderPaymentPort.startPayment(command.orderId(), command.currentUser());
+        PaymentTransaction payment = loadPaymentPort.findByIdempotencyKey(command.idempotencyKey())
+                .orElseGet(() -> createApprovedPayment(command));
 
-        Optional<PaymentTransaction> existing = loadPaymentPort.findByIdempotencyKey(command.idempotencyKey());
-        if (existing.isPresent()) {
-            PaymentTransaction payment = existing.get();
-            if (payment.isApproved()) {
-                markOrderPaidPort.markPaid(payment.getOrderId(), payment.getPaymentId(), payment.getIdempotencyKey(), MARK_PAID_REASON);
-            }
-            return new PaymentResult(payment.getPaymentId(), payment.getOrderId(), payment.getStatus());
+        if (payment.isApproved()) {
+            markOrderPaidPort.markPaid(payment.getOrderId(), payment.getPaymentId(), payment.getIdempotencyKey(), MARK_PAID_REASON);
         }
+
+        return toResult(payment);
+    }
+
+    private PaymentTransaction createApprovedPayment(ApprovePaymentCommand command) {
+        requestOrderPaymentPort.startPayment(command.orderId(), command.currentUser());
 
         PaymentTransaction payment = PaymentTransaction.approve(
                 command.orderId(),
@@ -52,10 +55,15 @@ public class ApprovePaymentService implements ApprovePaymentUseCase {
                 Instant.now()
         );
 
-        PaymentTransaction saved = savePaymentPort.save(payment);
-        markOrderPaidPort.markPaid(saved.getOrderId(), saved.getPaymentId(), saved.getIdempotencyKey(), MARK_PAID_REASON);
+        try {
+            return savePaymentPort.save(payment);
+        } catch (DataIntegrityViolationException e) {
+            Optional<PaymentTransaction> existing = loadPaymentPort.findByIdempotencyKey(command.idempotencyKey());
+            return existing.orElseThrow(() -> e);
+        }
+    }
 
-        return new PaymentResult(saved.getPaymentId(), saved.getOrderId(), saved.getStatus());
+    private PaymentResult toResult(PaymentTransaction payment) {
+        return new PaymentResult(payment.getPaymentId(), payment.getOrderId(), payment.getStatus());
     }
 }
-
