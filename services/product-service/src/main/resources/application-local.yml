@@ -39,6 +39,9 @@ app:
 security:
   jwt:
     secret: ${JWT_SECRET:local-dev-secret-change-me}  # (??? ??? ?? ???? ??)
+  internal:
+    header-name: X-Internal-Secret
+    service-secret: ${INTERNAL_SERVICE_SECRET:local-internal-secret}
 
 logging:
   level:

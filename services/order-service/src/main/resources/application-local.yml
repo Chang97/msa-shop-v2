@@ -27,7 +27,7 @@ spring:
 # (??) ?? ?? ??? URL(?????? ??, ?? ?? ???? ??? ??)
 clients:
   product:
-    base-url: ${PRODUCT_BASE_URL:http://localhost:8080/api/product}
+    base-url: ${PRODUCT_BASE_URL:http://localhost:8082/internal/products}
   payment:
     base-url: ${PAYMENT_BASE_URL:http://localhost:8080/api/payment}
 

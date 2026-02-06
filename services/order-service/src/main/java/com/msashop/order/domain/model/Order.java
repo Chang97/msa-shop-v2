@@ -138,39 +138,28 @@ public class Order {
     }
 
     public void cancel() {
-        if (this.status == OrderStatus.CANCELLED) {
-            return;
+        switch (this.status) {
+            case CANCELLED -> { return; }
+            case PAID -> throw new IllegalStateException("ORDER_ALREADY_PAID");
+            case CREATED, PENDING_PAYMENT -> this.status = OrderStatus.CANCELLED;
         }
-        if (this.status == OrderStatus.PAID) {
-            throw new IllegalStateException("Paid order cannot be cancelled");
-        }
-        this.status = OrderStatus.CANCELLED;
     }
 
     public void startPayment() {
-        if (this.status == OrderStatus.PAID) {
-            throw new IllegalStateException("Paid order cannot start payment");
-        }
-        if (this.status == OrderStatus.CANCELLED) {
-            throw new IllegalStateException("Cancelled order cannot start payment");
-        }
-        if (this.status == OrderStatus.CREATED) {
-            this.status = OrderStatus.PENDING_PAYMENT;
+        switch (this.status) {
+            case PAID -> throw new IllegalStateException("ORDER_ALREADY_PAID");
+            case CANCELLED -> throw new IllegalStateException("ORDER_ALREADY_CANCELLED");
+            case PENDING_PAYMENT -> { return; } // idempotent
+            case CREATED -> this.status = OrderStatus.PENDING_PAYMENT;
         }
     }
 
     public void markPaid() {
-        if (this.status == OrderStatus.PAID) {
-            return;
-        }
-        if (this.status == OrderStatus.CANCELLED) {
-            throw new IllegalStateException("Cancelled order cannot be paid");
-        }
-        if (this.status == OrderStatus.CREATED) {
-            throw new IllegalStateException("Order must start payment before paid");
-        }
-        if (this.status == OrderStatus.PENDING_PAYMENT) {
-            this.status = OrderStatus.PAID;
+        switch (this.status) {
+            case PAID -> { return; } // idempotent
+            case CANCELLED -> throw new IllegalStateException("ORDER_ALREADY_CANCELLED");
+            case CREATED -> throw new IllegalStateException("ORDER_PAYMENT_NOT_STARTED");
+            case PENDING_PAYMENT -> this.status = OrderStatus.PAID;
         }
     }
 

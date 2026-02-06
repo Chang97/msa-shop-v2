@@ -1,6 +1,7 @@
 package com.msashop.product.config.security;
 
 import com.msashop.product.common.security.GatewayAuthHeaderFilter;
+import com.msashop.product.config.security.InternalSecretFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -16,7 +17,9 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http, GatewayAuthHeaderFilter gatewayAuthHeaderFilter) throws Exception {
+    SecurityFilterChain securityFilterChain(HttpSecurity http,
+                                            GatewayAuthHeaderFilter gatewayAuthHeaderFilter,
+                                            InternalSecretFilter internalSecretFilter) throws Exception {
         return http
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .csrf(AbstractHttpConfigurer::disable)
@@ -28,11 +31,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
+                        .requestMatchers("/internal/**").permitAll()
                         .anyRequest().authenticated()
                 )
 
                 // 헤더 기반 인증 필터 주입 (인증 필터보다 앞에 두는게 안전)
                 .addFilterBefore(gatewayAuthHeaderFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(internalSecretFilter, UsernamePasswordAuthenticationFilter.class)
 
                 .build();
     }
