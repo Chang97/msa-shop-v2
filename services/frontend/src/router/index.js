@@ -71,7 +71,14 @@ router.beforeEach(async (to) => {
   if (to.meta.public) return true;
   const user = useUserStore();
   if (!user.isAuthenticated) {
-    return { path: '/login', query: { redirect: to.fullPath } };
+    try {
+      await user.fetchSession();
+    } catch (_) {
+      // ignore and fall through to redirect
+    }
+    if (!user.isAuthenticated) {
+      return { path: '/login', query: { redirect: to.fullPath } };
+    }
   }
   if (to.meta.requiresAdmin && !user.hasRole('ROLE_ADMIN')) {
     return { path: '/products' };

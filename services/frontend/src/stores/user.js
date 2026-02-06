@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue';
+import { computed, ref, watch } from 'vue';
 import { defineStore } from 'pinia';
 import http, { toError } from '@/api/http';
 import { resolveMenuTarget } from '@/utils/menu';
@@ -69,6 +69,7 @@ export const useUserStore = defineStore(
 
     // hydrate auth header if token already persisted
     setAuthHeader(accessToken.value);
+    watch(accessToken, (token) => setAuthHeader(token), { immediate: true });
 
     const leafMenus = computed(() => {
       const leaves = [];
@@ -403,12 +404,15 @@ export const useUserStore = defineStore(
 
     const fetchSession = async () => {
       try {
-        const { data } = await http.get('/auth/me');
+        if (!accessToken.value) {
+          await tryRefresh();
+        }
+        const { data } = await http.get('/users/me');
         await setSession(data);
         return data;
       } catch (error) {
         clearSession();
-        if (error?.status === 404 || error?.status === 204) {
+        if (error?.status === 404 || error?.status === 204 || error?.status === 401 || error?.status === 403) {
           return null;
         }
         throw error;
@@ -422,6 +426,19 @@ export const useUserStore = defineStore(
         clearSession();
         setAuthHeader('');
       }
+    };
+
+    const tryRefresh = async () => {
+      try {
+        const { data } = await http.post('/auth/refresh');
+        if (data?.accessToken) {
+          await setSession(data);
+          return data;
+        }
+      } catch (_) {
+        // ignore refresh failure
+      }
+      return null;
     };
 
     return {
@@ -448,6 +465,7 @@ export const useUserStore = defineStore(
       login,
       fetchSession,
       logout,
+      tryRefresh,
       clearSession,
       markSessionChecked,
       $reset

@@ -22,6 +22,7 @@ const refreshAccessToken = async () => {
         const token = res?.data?.accessToken;
         if (token) {
           http.defaults.headers.common.Authorization = `Bearer ${token}`;
+          console.debug('[auth] refresh success: access token reissued');
           try {
             const { useUserStore } = await import('@/stores/user');
             const userStore = useUserStore();
@@ -58,9 +59,10 @@ http.interceptors.response.use(
     const status = error?.response?.status;
     const originalConfig = error?.config || {};
 
-    if (status === 401 && shouldRetryWithRefresh(originalConfig)) {
+    if ((status === 401 || status === 403) && shouldRetryWithRefresh(originalConfig)) {
       originalConfig._retry = true;
       try {
+        console.warn('[auth] 401 detected, trying refresh…', { url: originalConfig.url });
         const newToken = await refreshAccessToken();
         if (newToken) {
           originalConfig.headers = {
@@ -70,7 +72,7 @@ http.interceptors.response.use(
           return http(originalConfig);
         }
       } catch (_) {
-        // fall through to redirect
+        console.error('[auth] refresh failed, redirecting to login');
       }
       window.location.href = '/login';
     }

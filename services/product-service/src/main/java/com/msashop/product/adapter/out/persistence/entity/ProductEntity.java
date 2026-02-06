@@ -42,4 +42,8 @@ public class ProductEntity extends BaseAuditEntity {
     @Column(name = "use_yn", nullable = false)
     private Boolean useYn = true;
 
+    public void setStock(Integer stock) {
+        this.stock = stock;
+    }
+
 }
