@@ -1,0 +1,24 @@
+# README Outline
+
+- Overview
+- Architecture
+  - Services, ports, and base paths
+  - Gateway JWT verification and header forwarding
+- Security/Auth
+  - JWT issuance/validation
+  - Internal secret filter
+  - CurrentUser injection from gateway headers
+- Services
+  - Auth, Gateway, Product, Order, Payment, User, Frontend
+- API Summary
+  - Auth, Product, Order, Payment, User endpoints
+- E2E Flow
+  - Order creation → payment start → payment approve → order mark-paid → stock decrement
+- Idempotency
+- Domain State Transitions
+  - OrderStatus transitions and business rules
+- Local Run
+  - docker-compose, env vars, per-service bootRun
+  - Sample curl sequence
+- Troubleshooting
+- Trade-offs & Next Steps
