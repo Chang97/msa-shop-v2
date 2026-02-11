@@ -63,11 +63,12 @@ export const useProductStore = defineStore('products', {
 });
 
 function mapDetail(p = {}) {
+  const stockValue = Number.isFinite(Number(p.stock)) ? Number(p.stock) : null;
   return {
     id: p.productId,
     name: p.productName,
     price: p.price,
-    stock: p.stock,
+    stock: stockValue,
     status: p.status,
     createdAt: p.createdAt,
     raw: p

@@ -16,7 +16,7 @@ const routes = [
     path: '/products',
     name: 'products-list',
     component: () => import('@/pages/ProductsListPage.vue'),
-    meta: { public: false }
+    meta: { public: true }
   },
   {
     path: '/products/new',
@@ -28,7 +28,7 @@ const routes = [
     path: '/products/:id',
     name: 'products-detail',
     component: () => import('@/pages/ProductDetailPage.vue'),
-    meta: { public: false }
+    meta: { public: true }
   },
   {
     path: '/cart',

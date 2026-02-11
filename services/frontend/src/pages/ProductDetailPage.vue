@@ -110,7 +110,9 @@ function handleAddToCart() {
     emit('notify', { message: '품절된 상품입니다.' });
     return;
   }
-  cart.addItem(product.value, quantity.value);
+  const maxQty = product.value.stock ?? quantity.value;
+  const safeQty = Math.min(maxQty, quantity.value || 1);
+  cart.addItem(product.value, safeQty);
   emit('notify', { variant: 'info', message: '장바구니에 담았습니다.' });
 }
 
@@ -126,6 +128,20 @@ function handleBuyNow() {
 watch(
   () => route.params.id,
   () => load()
+);
+
+watch(
+  () => quantity.value,
+  (val) => {
+    if (!product.value) return;
+    const max = product.value.stock ?? val;
+    if (val > max) {
+      quantity.value = max;
+    }
+    if (val < 1 && max > 0) {
+      quantity.value = 1;
+    }
+  }
 );
 
 onMounted(load);

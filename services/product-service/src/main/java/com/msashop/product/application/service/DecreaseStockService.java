@@ -8,6 +8,7 @@ import com.msashop.product.adapter.out.persistence.repo.ProductCommandJpaReposit
 import com.msashop.product.application.port.in.DecreaseStockUseCase;
 import com.msashop.product.application.port.in.model.DecreaseStockCommand;
 import com.msashop.product.domain.model.ProductStatus;
+import com.msashop.common.web.exception.PaymentErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,7 +46,11 @@ public class DecreaseStockService implements DecreaseStockUseCase {
                 throw new ConflictException(CommonErrorCode.COMMON_CONFLICT, "insufficient stock. productId: " + productId);
             }
 
-            entity.setStock(entity.getStock() - qty);
+            int updated = productCommandJpaRepository.decreaseStock(productId, qty, ProductStatus.ON_SALE);
+            if (updated == 0) {
+                throw new ConflictException(PaymentErrorCode.PAYMENT_STOCK_SHORTAGE,
+                        "insufficient stock or concurrent update. productId: " + productId);
+            }
         });
     }
 
@@ -63,4 +68,3 @@ public class DecreaseStockService implements DecreaseStockUseCase {
         return aggregated;
     }
 }
-
