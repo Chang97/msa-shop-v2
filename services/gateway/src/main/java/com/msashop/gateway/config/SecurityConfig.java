@@ -36,6 +36,7 @@ public class SecurityConfig {
 
                         // 공개 API
                         .pathMatchers("/api/auth/**").permitAll()
+                        .pathMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         .pathMatchers("/actuator/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
 
                         // 나머지 전부 JWT 필요

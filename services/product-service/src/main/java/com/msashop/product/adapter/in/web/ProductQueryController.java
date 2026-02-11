@@ -7,7 +7,6 @@ import com.msashop.product.application.port.in.GetProductsUseCase;
 import com.msashop.product.application.port.in.model.ProductResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -24,7 +23,6 @@ public class ProductQueryController {
     private final GetProductsUseCase getProductsUseCase;
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('ROLE_USER','ROLE_ADMIN')")
     public ResponseEntity<List<ProductResponse>> getProducts() {
         List<ProductResponse> responses = getProductsUseCase.getProducts().stream()
                 .map(ProductWebQueryMapper::toResponse)
@@ -33,7 +31,6 @@ public class ProductQueryController {
     }
 
     @GetMapping("/{productId}")
-    @PreAuthorize("hasAnyAuthority('ROLE_USER','ROLE_ADMIN')")
     public ResponseEntity<ProductResponse> getProduct(@PathVariable Long productId) {
         ProductResult result = getProductUseCase.getProduct(productId);
         return ResponseEntity.ok(ProductWebQueryMapper.toResponse(result));
