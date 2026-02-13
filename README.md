@@ -62,14 +62,29 @@
 
 ## 3.3 공개 API / 인증 API / 내부 API 구분
 
-| 구분        | 예시                | 보호 방식             |
-| --------- | ----------------- | ----------------- |
-| 공개 API    | GET /api/products | permitAll         |
-| 인증 필요 API | 주문/결제/내정보         | JWT 필요            |
-| 내부 API    | /internal/**      | X-Internal-Secret |
+| 구분 | 예시 | 보호 방식 |
+|---|---|---|
+| 공개 API | `GET /api/products/**` | `permitAll` |
+| 인증 필요 API | 주문/결제/내정보 (`/api/orders/**`, `/api/payments/**`, `/api/users/**`) | Gateway JWT 검증 + 헤더 기반 인증 컨텍스트 |
+| 내부 API | `/internal/**` | `X-Internal-Secret` 검증(InternalSecretFilter) |
+
+> 인증(Authentication)은 Gateway에서 처리하고, 인가(Authorization)는 각 서비스에서 `@PreAuthorize`로 수행합니다.
 
 📌 이 구조를 통해 “인증”과 “인가” 책임을 분리했습니다.
 
+---
+## 3.4 내부 호출 신뢰 모델
+
+현재 구조에서는 Gateway만 외부 JWT를 검증하며,
+서비스 간 호출은 X-Internal-Secret 헤더 기반으로 보호합니다.
+
+이는 다음을 전제로 합니다:
+
+- 내부 네트워크는 신뢰 영역으로 가정
+- 외부 요청은 반드시 Gateway를 통과
+- 내부 호출은 인증(Authentication)이 아닌 서비스 간 신뢰(Trust) 기반
+
+> 실제 운영 환경에서는 mTLS, 서비스 토큰, 네트워크 레벨 방화벽 등을 추가로 고려할 수 있습니다.
 ---
 
 # 🧠 4. 도메인 중심 설계
@@ -98,6 +113,17 @@ CANCELLED
 * 비즈니스 규칙 중앙 집중
 
 ---
+## 4.2 상태 전이 제약 조건
+
+Order Aggregate는 단순 상태 변경이 아니라
+**비즈니스 제약 조건을 함께 보장**합니다.
+
+예시:
+
+- markPaid()는 반드시 PENDING_PAYMENT 상태에서만 허용
+- 이미 PAID 상태라면 no-op (멱등)
+- CANCELLED 상태에서는 결제 완료 불가
+- PAID 이후 취소 불가
 
 ![주문 상태 전이 다이어그램](./docs/status-diagram.png)
 
@@ -133,6 +159,9 @@ Client
 * 재고 중복 차감 방지
 * 주문 상태 중복 전이 방지
 
+> 동일 idempotencyKey로 재요청이 발생하더라도,
+Payment 트랜잭션은 1건만 유지되며, Order 상태 및 재고는 추가 변경되지 않습니다.
+
 ---
 
 # 📦 6. 재고 차감 전략
@@ -152,6 +181,7 @@ WHERE product_id = :id
 * 멱등 처리
 * DB 원자적 업데이트
 
+> 재고 차감은 stock >= 요청수량 조건을 포함한 단일 UPDATE 문으로 수행되어, 동시성 환경에서도 음수 재고를 방지합니다.
 ---
 
 # 🧪 7. E2E 흐름
@@ -164,6 +194,7 @@ WHERE product_id = :id
 6. 재고 감소
 7. 동일 idempotencyKey 재호출 → 변화 없음
 
+> 위 흐름은 통합 테스트를 통해 검증되었으며, 멱등성과 상태 전이의 일관성을 확인했습니다.
 ---
 
 # ⚖ 8. 설계 트레이드오프
@@ -193,6 +224,30 @@ WHERE product_id = :id
 
 ---
 
+# 10. 로컬 실행 (Quickstart)
+
+## 10.1 사전 준비
+- JDK 21
+- Docker (PostgreSQL/Redis)
+- (선택) Node.js (프론트 실행 시)
+
+## 10.2 인프라 기동
+```bash
+docker compose -f infra/docker-compose.yml up -d
+```
+
+## 10.3 서비스 실행
+```bash
+./gradlew :gateway:bootRun --args='--spring.profiles.active=local'
+./gradlew :auth-service:bootRun --args='--spring.profiles.active=local'
+./gradlew :user-service:bootRun --args='--spring.profiles.active=local'
+./gradlew :product-service:bootRun --args='--spring.profiles.active=local'
+./gradlew :order-service:bootRun --args='--spring.profiles.active=local'
+./gradlew :payment-service:bootRun --args='--spring.profiles.active=local'
+
+```
+---
+
 # 📸 프론트엔드 화면
 
 ![상품 목록 화면](./docs/상품목록.png)
@@ -203,14 +258,13 @@ WHERE product_id = :id
 
 ---
 
-# 📌 이 프로젝트의 수준
+## 🧩 설계 관점 요약
 
-이 프로젝트는 다음을 구현했습니다:
+이 프로젝트는 기능 구현 자체보다
 
-* 도메인 기반 상태 통제
-* 멱등 설계
-* 서비스 경계 유지
-* 내부 API 보호 전략
+- 상태 전이 통제
+- 멱등 설계
+- 서비스 경계 유지
+- 인증/인가 책임 분리
 
-단순 CRUD 예제를 넘어
-실제 서비스 설계 포인트를 반영한 구조입니다.
+를 실제 코드로 구현하고 검증하는 데 목적이 있습니다.
