@@ -145,8 +145,8 @@ class PaymentE2EIntegrationTest {
                 "price", price,
                 "stock", stock
         );
-        ResponseEntity<Long> res = exchange(productBaseUrl + "/api/products", HttpMethod.POST, body, Long.class, ADMIN_HEADERS);
-        return res.getBody();
+        ResponseEntity<ProductCreateResponse> res = exchange(productBaseUrl + "/api/products", HttpMethod.POST, body, ProductCreateResponse.class, ADMIN_HEADERS);
+        return res.getBody() != null ? res.getBody().productId() : null;
     }
 
     private ProductResponse getProduct(Long productId) {
@@ -173,8 +173,8 @@ class PaymentE2EIntegrationTest {
                 "memo", "테스트",
                 "items", List.of(item)
         );
-        ResponseEntity<Long> res = exchange(orderBaseUrl + "/api/orders", HttpMethod.POST, payload, Long.class, USER_HEADERS);
-        return res.getBody();
+        ResponseEntity<OrderCreateResponse> res = exchange(orderBaseUrl + "/api/orders", HttpMethod.POST, payload, OrderCreateResponse.class, USER_HEADERS);
+        return res.getBody() != null ? res.getBody().orderId() : null;
     }
 
     private void startPayment(Long orderId) {
@@ -209,7 +209,11 @@ class PaymentE2EIntegrationTest {
         return restTemplate.exchange(url, method, entity, type);
     }
 
+    private record ProductCreateResponse(Long productId) {}
+
     private record ProductResponse(Long productId, String productName, BigDecimal price, Integer stock, String status, Boolean useYn) {}
+
+    private record OrderCreateResponse(Long orderId) {}
 
     private record OrderResponse(Long orderId, String status) {}
 
