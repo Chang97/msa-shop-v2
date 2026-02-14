@@ -6,7 +6,7 @@ pluginManagement {
 }
 
 dependencyResolutionManagement {
-    repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS)
+    repositoriesMode.set(RepositoriesMode.PREFER_PROJECT)
     repositories {
         mavenCentral()
     }
@@ -20,6 +20,7 @@ include(":product-service")
 include(":order-service")
 include(":payment-service")
 include(":user-service")
+include(":e2e-test")
 
 project(":libs:common-web").projectDir = file("libs/common-web")
 project(":gateway").projectDir = file("services/gateway")
@@ -28,3 +29,4 @@ project(":product-service").projectDir = file("services/product-service")
 project(":order-service").projectDir = file("services/order-service")
 project(":payment-service").projectDir = file("services/payment-service")
 project(":user-service").projectDir = file("services/user-service")
+project(":e2e-test").projectDir = file("e2e-test")
