@@ -8,19 +8,45 @@
         MSA Shop
       </RouterLink>
       <nav>
-        <RouterLink to="/products">상품 목록</RouterLink>
-        <RouterLink to="/cart">장바구니<span v-if="cart.totalQuantity"> ({{ cart.totalQuantity }})</span></RouterLink>
-        <RouterLink v-if="user.isAuthenticated" to="/orders">내 주문</RouterLink>
-        <RouterLink v-if="user.hasRole('ROLE_ADMIN')" to="/products/new">상품 등록</RouterLink>
+        <RouterLink
+          to="/products"
+        >
+          상품 목록
+        </RouterLink>
+        <RouterLink
+          to="/cart"
+        >
+          장바구니
+          <span v-if="cart.totalQuantity"> ({{ cart.totalQuantity }})</span>
+        </RouterLink>
+        <RouterLink
+          v-if="user.isAuthenticated"
+          to="/orders"
+        >
+          내 주문
+        </RouterLink>
+        <RouterLink
+          v-if="user.hasRole('ROLE_ADMIN')"
+          to="/products/new"
+        >
+          상품 등록
+        </RouterLink>
       </nav>
       <div class="user-area">
-        <RouterLink
-          v-if="!user.isAuthenticated"
-          to="/login"
-          class="secondary"
-        >
-          로그인
-        </RouterLink>
+        <template v-if="!user.isAuthenticated">
+          <RouterLink
+            to="/login"
+            class="secondary"
+          >
+            로그인
+          </RouterLink>
+          <RouterLink
+            to="/register"
+            class="primary"
+          >
+            회원가입
+          </RouterLink>
+        </template>
         <div
           v-else
           class="user-info"
@@ -56,7 +82,7 @@
 </template>
 
 <script setup>
-import { computed, reactive } from 'vue';
+import { reactive } from 'vue';
 import { RouterLink, RouterView, useRouter } from 'vue-router';
 import { useUserStore } from '@/stores/user';
 import { useCartStore } from '@/stores/cart';
@@ -65,11 +91,9 @@ const user = useUserStore();
 const cart = useCartStore();
 const router = useRouter();
 const notification = reactive({ message: '', variant: 'info' });
-const PRODUCT_CREATE_PERMISSION = 'PRODUCT_CREATE';
-const canManageProducts = computed(() => user.hasPermission(PRODUCT_CREATE_PERMISSION));
 
 function notify(payload) {
-  notification.message = payload.message || '알 수 없는 오류가 발생했습니다.';
+  notification.message = payload.message || '요청을 처리하는 중 오류가 발생했습니다.';
   notification.variant = payload.variant || 'error';
   setTimeout(() => {
     notification.message = '';

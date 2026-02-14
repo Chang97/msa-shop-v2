@@ -9,6 +9,12 @@ const routes = [
     meta: { public: true }
   },
   {
+    path: '/register',
+    name: 'register',
+    component: () => import('@/pages/RegisterPage.vue'),
+    meta: { public: true }
+  },
+  {
     path: '/',
     redirect: '/products'
   },

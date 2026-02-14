@@ -389,6 +389,18 @@ export const useUserStore = defineStore(
       sessionChecked.value = false;
     };
 
+    const register = async (payload) => {
+      loading.value = true;
+      try {
+        const { data } = await http.post('/auth/register', payload);
+        return data;
+      } catch (error) {
+        throw toError(error);
+      } finally {
+        loading.value = false;
+      }
+    };
+
     const login = async (payload) => {
       loading.value = true;
       try {
@@ -462,6 +474,7 @@ export const useUserStore = defineStore(
       hasPermission,
       resolveCurrentMenu,
       hasRole,
+      register,
       login,
       fetchSession,
       logout,
