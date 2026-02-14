@@ -1,6 +1,7 @@
 package com.msashop.product.adapter.in.web;
 
 import com.msashop.product.adapter.in.web.dto.CreateProductRequest;
+import com.msashop.product.adapter.in.web.dto.ProductCommandResponse;
 import com.msashop.product.adapter.in.web.mapper.ProductWebCommandMapper;
 import com.msashop.product.application.port.in.CreateProductUseCase;
 import jakarta.validation.Valid;
@@ -21,10 +22,10 @@ public class ProductCommandController {
     // 상품 등록
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     @PostMapping
-    public ResponseEntity<Long> create(@Valid @RequestBody CreateProductRequest request) {
+    public ResponseEntity<ProductCommandResponse> create(@Valid @RequestBody CreateProductRequest request) {
         Long productId = createProductUseCase.createProduct(ProductWebCommandMapper.toCommand(request));
 
-        return ResponseEntity.ok(productId);
+        return ResponseEntity.ok(new ProductCommandResponse(productId));
     }
 }
 

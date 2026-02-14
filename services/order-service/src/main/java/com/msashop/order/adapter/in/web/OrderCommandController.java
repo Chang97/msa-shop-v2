@@ -2,6 +2,7 @@ package com.msashop.order.adapter.in.web;
 
 import com.msashop.order.adapter.in.web.dto.CancelOrderRequest;
 import com.msashop.order.adapter.in.web.dto.CreateOrderRequest;
+import com.msashop.order.adapter.in.web.dto.OrderCommandResponse;
 import com.msashop.order.adapter.in.web.mapper.OrderWebCommandMapper;
 import com.msashop.order.application.port.in.CancelOrderUseCase;
 import com.msashop.order.application.port.in.CreateOrderUseCase;
@@ -27,10 +28,10 @@ public class OrderCommandController {
 
     @PreAuthorize("hasAnyAuthority('ROLE_USER','ROLE_ADMIN')")
     @PostMapping
-    public ResponseEntity<Long> create(@AuthenticationPrincipal CurrentUser currentUser,
-                                       @Valid @RequestBody CreateOrderRequest request) {
+    public ResponseEntity<OrderCommandResponse> create(@AuthenticationPrincipal CurrentUser currentUser,
+                                                       @Valid @RequestBody CreateOrderRequest request) {
         Long orderId = createOrderUseCase.createOrder(OrderWebCommandMapper.toCommand(currentUser.userId(), request));
-        return ResponseEntity.ok(orderId);
+        return ResponseEntity.ok(new OrderCommandResponse(orderId));
     }
 
     @PreAuthorize("hasAnyAuthority('ROLE_USER','ROLE_ADMIN')")
