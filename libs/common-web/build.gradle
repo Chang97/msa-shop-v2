@@ -10,23 +10,25 @@ java {
 }
 
 dependencyManagement {
-    // 루트에서 쓰는 Boot 버전과 "동일"하게 맞춘다 (너 로그는 3.2.12)
+    // 루트와 동일한 Spring Boot BOM 사용
     imports {
         mavenBom "org.springframework.boot:spring-boot-dependencies:3.2.12"
     }
 }
 
 dependencies {
-    // @RestControllerAdvice, ResponseEntity, HttpStatus 등을 쓰려면 spring-web 필요
+    // @RestControllerAdvice, ResponseEntity, HttpStatus
     api 'org.springframework:spring-web'
 
-    // Spring MVC 예외 타입(MethodArgumentNotValidException 등) 처리를 하려면 spring-webmvc 필요
+    // Spring MVC 예외 유형(MethodArgumentNotValidException 등)
     api 'org.springframework:spring-webmvc'
 
-    // Validation 예외(ConstraintViolationException) 파싱 용도
+    // 인증/인가 예외 매핑용 Security core
+    api 'org.springframework.security:spring-security-core'
+
+    // Validation 예외(ConstraintViolationException) 처리
     api 'jakarta.validation:jakarta.validation-api'
 
-    // (선택) Jackson 필요하면 추가 (ErrorResponse 직렬화는 보통 서비스쪽 Boot가 제공하지만,
-    // common 모듈 단독 테스트/사용 시 필요할 수 있음)
+    // 필요 시 Jackson 추가 (서비스 측에서 주로 제공)
     // api 'com.fasterxml.jackson.core:jackson-databind'
 }

@@ -8,6 +8,7 @@ public enum CommonErrorCode implements ErrorCode {
 
     COMMON_VALIDATION("COM_400", 400, "Validation failed."),
     COMMON_UNAUTHORIZED("COM_401", 401, "Unauthorized."),
+    COMMON_FORBIDDEN("COM_403", 403, "Forbidden."),
     COMMON_NOT_FOUND("COM_404", 404, "Resource not found."),
     COMMON_CONFLICT("COM_409", 409, "Conflict."),
     COMMON_INTERNAL_ERROR("COM_500", 500, "Internal server error.");
