@@ -142,16 +142,7 @@ Order Aggregate는 단순 상태 변경이 아니라
 
 ## 5.1 결제 승인 흐름
 
-[//]: # (📌 **[이미지 삽입 위치 – 결제 시퀀스 다이어그램]**)
-
-```
-Client
-  → Gateway
-    → Payment Service (approve)
-      → Order Service (/pay)
-      → Order Service (/internal/mark-paid)
-      → Product Service (/internal/decrease-stock)
-```
+![결제 시퀀스 다이어그램](./docs/payment-sequence.png)
 
 ---
 
@@ -275,6 +266,16 @@ docker compose -f infra/docker-compose.yml up -d
 
 ![결제 화면](./docs/결제.png)
 
+---
+
+## 🧪 E2E 통합 테스트
+
+- `e2e-test` 모듈에서 Gateway(8080) 기준으로 실제 HTTP E2E 테스트를 수행합니다.
+- 전제: docker-compose 인프라 + 모든 서비스가 실행 중이어야 합니다.
+
+```bash
+./gradlew :e2e-test:test
+```
 ---
 
 ## 🧩 설계 관점 요약
