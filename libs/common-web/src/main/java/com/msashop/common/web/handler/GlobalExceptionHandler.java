@@ -8,6 +8,8 @@ import com.msashop.common.web.response.ErrorResponse;
 import jakarta.validation.ConstraintViolationException;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.BindException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -38,6 +40,34 @@ public class GlobalExceptionHandler {
                 Instant.now()
         );
         return ResponseEntity.status(ec.status()).body(body);
+    }
+
+    /**
+     * 인증 실패 (Spring Security AuthenticationException 계열).
+     */
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<ErrorResponse> handleAuthentication(AuthenticationException ex) {
+        ErrorResponse body = new ErrorResponse(
+                CommonErrorCode.COMMON_UNAUTHORIZED.code(),
+                ex.getMessage(),
+                CommonErrorCode.COMMON_UNAUTHORIZED.status(),
+                Instant.now()
+        );
+        return ResponseEntity.status(CommonErrorCode.COMMON_UNAUTHORIZED.status()).body(body);
+    }
+
+    /**
+     * 인가 실패 (권한 부족): 403 반환.
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex) {
+        ErrorResponse body = new ErrorResponse(
+                CommonErrorCode.COMMON_FORBIDDEN.code(),
+                ex.getMessage(),
+                CommonErrorCode.COMMON_FORBIDDEN.status(),
+                Instant.now()
+        );
+        return ResponseEntity.status(CommonErrorCode.COMMON_FORBIDDEN.status()).body(body);
     }
 
     /**
