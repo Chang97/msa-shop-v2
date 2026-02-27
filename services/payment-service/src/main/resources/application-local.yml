@@ -30,8 +30,8 @@ clients:
 
 app:
   idempotency:
-    ttl-seconds: 600
     key-prefix: payment:idempotency
+    ttl-seconds: 300
 
 security:
   internal:
