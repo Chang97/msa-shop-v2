@@ -1,5 +1,14 @@
 # MSA Shop v2
 
+## 결제 멱등 추가 가이드 (Redis + DB)
+
+-   Redis 선행 차단: Payment-service에서 `SETNX+TTL`로 중복 승인 차단, 키 예: `idempotency:payment:{orderId}:{idempotencyKey}`
+-   TTL 기본 300s(환경별 조정), 성공 시 TTL 자연 만료 / 실패 시 `release` 정책화
+-   Redis 획득 실패: DB 재조회 후 기존 결과 반환(멱등 OK), 없으면 `PAYMENT_IDEMPOTENCY_MISSING`(404)
+-   정상 플로우: Redis 선차단 → 도메인 처리 → DB INSERT(UNIQUE) → 충돌 시 재조회 후 멱등 OK
+-   장애 정책: Redis 장애 시 거절(503) 또는 DB UNIQUE만 사용 여부를 팀 합의로 결정
+
+
 > Spring Boot 3.2 기반 MSA 쇼핑몰 실무 시뮬레이션 프로젝트\
 > 실무에서 사용해보지 못한 아키텍처와 기술 스택을 직접 설계·구현하며
 > 학습한 프로젝트
@@ -95,13 +104,38 @@ CANCELLED
 
 ### 멱등 전략
 
--   `idempotencyKey` 필수
--   DB UNIQUE 제약
--   선조회 + 충돌 처리
--   도메인 메서드 멱등 처리
+### 멱등 전략
 
-동일 키 재요청 시 - Payment 트랜잭션 1건 유지 - Order 상태 추가 변경
-없음 - 재고 추가 차감 없음
+- `idempotencyKey` 필수
+- Redis `SETNX + TTL` 기반 선차단
+- DB UNIQUE 제약 (이중 방어)
+- 선조회 + 충돌 처리
+- 도메인 메서드 멱등 처리
+
+### 처리 흐름
+
+1. Redis `SETNX`로 중복 요청 선차단
+2. 결제 도메인 로직 수행
+3. DB INSERT (UNIQUE 제약)
+4. 충돌 발생 시 기존 결제 결과 재조회 반환
+
+### 설계 의도
+
+- 애플리케이션 레벨에서 중복 요청을 선제적으로 차단
+- DB 충돌 이전 단계에서 트래픽 감소
+- Redis + DB 이중 방어 구조로 안정성 확보
+
+### 장애 대응 전략
+
+- Redis 장애 시
+
+  → 서비스 거절(503) 또는 DB UNIQUE 기반 폴백 가능하도록 설계
+
+동일 키 재요청 시
+
+- Payment 트랜잭션 1건 유지
+- Order 상태 추가 변경 없음
+- 재고 추가 차감 없음
 
 ------------------------------------------------------------------------
 
