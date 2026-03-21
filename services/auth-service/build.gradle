@@ -73,6 +73,8 @@ dependencies {
 
 	implementation 'org.flywaydb:flyway-core'
 
+	implementation 'org.springframework.kafka:spring-kafka'
+
 	implementation project(":libs:common-web")
 }
 
