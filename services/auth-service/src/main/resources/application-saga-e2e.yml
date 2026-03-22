@@ -1,0 +1,34 @@
+spring:
+  kafka:
+    # saga E2E는 docker-compose로 띄운 로컬 Kafka 브로커 19092 포트를 사용한다.
+    bootstrap-servers: localhost:19092
+
+decorator:
+  datasource:
+    # saga E2E에서는 outbox/inbox polling으로 SQL 로그가 과도하게 쌓이므로 p6spy를 끈다.
+    p6spy:
+      enabled: false
+
+app:
+  kafka:
+    consumers:
+      # 회원가입 saga completion 이벤트를 auth-service가 실제로 소비하도록 켠다.
+      auth-user-saga-enabled: true
+    producer:
+      # outbox relay를 활성화해 DB outbox row를 Kafka로 내보낸다.
+      relay-enabled: true
+      # E2E에서는 많은 양을 보내지 않으므로 작은 배치 크기로 충분하다.
+      batch-size: 20
+      # polling 간격을 너무 짧게 두지 않아 불필요한 select/log 노이즈를 줄인다.
+      fixed-delay-ms: 1000
+
+logging:
+  level:
+    # saga E2E에서는 SQL 바인딩/조회 로그보다 최종 상태 검증이 중요하므로 끈다.
+    p6spy: OFF
+    org.hibernate.SQL: OFF
+    org.hibernate.orm.jdbc.bind: OFF
+    # Kafka client/framework 로그는 경고 이상만 남긴다.
+    org.apache.kafka: WARN
+    org.springframework.kafka: WARN
+    kafka: WARN

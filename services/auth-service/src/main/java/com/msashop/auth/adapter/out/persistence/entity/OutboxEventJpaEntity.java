@@ -6,6 +6,7 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.ColumnTransformer;
 
 import java.time.Instant;
 
@@ -43,6 +44,7 @@ public class OutboxEventJpaEntity {
     private String causationId;
 
     @Column(nullable = false, columnDefinition = "jsonb")
+    @ColumnTransformer(write = "?::jsonb")
     private String payloadJson;
 
     @Enumerated(EnumType.STRING)
@@ -55,6 +57,17 @@ public class OutboxEventJpaEntity {
     private Instant publishedAt;
     private String lastError;
 
-    public void markPublished(Instant now) { }
-    public void markFailed(String error) { }
+    public void markPublished(Instant now) {
+        // Kafka 발행 성공 시 상태와 발행 시각을 함께 갱신한다.
+        this.status = OutboxStatus.PUBLISHED;
+        this.publishedAt = now;
+        this.lastError = null;
+    }
+
+    public void markFailed(String error) {
+        // 발행 실패 시 재시도 횟수와 마지막 오류 메시지를 기록한다.
+        this.status = OutboxStatus.FAILED;
+        this.retryCount = this.retryCount + 1;
+        this.lastError = error;
+    }
 }

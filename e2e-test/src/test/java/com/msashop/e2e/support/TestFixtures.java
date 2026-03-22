@@ -70,4 +70,30 @@ public final class TestFixtures {
     public static record ApprovePaymentRequest(Long orderId, BigDecimal amount, String idempotencyKey) { }
 
     public static record CancelOrderRequest(String reason) { }
+
+    /**
+     * 회원가입 saga E2E 요청 본문.
+     * auth-service register API에 맞춰 테스트 데이터를 생성한다.
+     */
+    public static RegisterRequest register(String suffix) {
+        return new RegisterRequest(
+                "e2e-" + suffix + "@example.com",
+                "e2e-" + suffix,
+                "1234",
+                "E2E User " + suffix,
+                "EMP-" + suffix,
+                "QA",
+                "010-1111-2222"
+        );
+    }
+
+    public static record RegisterRequest(
+            String email,
+            String loginId,
+            String password,
+            String userName,
+            String empNo,
+            String pstnName,
+            String tel
+    ) { }
 }

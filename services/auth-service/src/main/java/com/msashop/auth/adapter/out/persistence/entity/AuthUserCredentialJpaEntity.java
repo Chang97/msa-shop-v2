@@ -39,4 +39,6 @@ public class AuthUserCredentialJpaEntity extends BaseAuditEntity {
     public void disable() {
         enabled = false;
     }
+
+    public void enable() { enabled = true; }
 }

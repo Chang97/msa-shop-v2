@@ -18,9 +18,9 @@ public class ProvisionUserProfileService implements ProvisionUserProfileUseCase 
 
     @Override
     @Transactional
-    public void provision(ProvisionUserProfileCommand command) {
+    public Long provision(ProvisionUserProfileCommand command) {
         // 이미 존재하면 멱등 처리(중복 호출/재시도까지 고려)
-        createUserProfilePort.createIfAbsent(command);
+        return createUserProfilePort.createIfAbsent(command);
     }
 }
 

@@ -9,6 +9,10 @@ public interface CredentialPort {
      */
     Long saveCredential(String email, String loginId, String passwordHash);
 
+    Long saveDisabledCredential(String email, String loginId, String passwordHash);
+
     // 비활성화 처리
     void disable(Long authUserId);
+
+    void enable(Long authUserId);
 }
