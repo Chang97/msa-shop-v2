@@ -19,6 +19,7 @@ spring:
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
       acks: all
     consumer:
+      group-id: user-service-auth-user-saga
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       auto-offset-reset: earliest

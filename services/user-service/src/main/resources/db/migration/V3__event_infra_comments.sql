@@ -1,0 +1,26 @@
+COMMENT ON TABLE outbox_event IS '서비스 로컬 트랜잭션 안에서 저장한 뒤 Kafka relay가 발행하는 outbox 테이블이다.';
+COMMENT ON COLUMN outbox_event.outbox_event_id IS '내부 영속성 처리용 대체 기본 키이다.';
+COMMENT ON COLUMN outbox_event.event_id IS '멱등 처리와 추적에 사용하는 전역 고유 이벤트 식별자이다.';
+COMMENT ON COLUMN outbox_event.topic IS 'relay가 이벤트를 발행할 Kafka 토픽 이름이다.';
+COMMENT ON COLUMN outbox_event.event_key IS '파티션 선택과 키 단위 순서 보장을 위한 Kafka 메시지 키이다.';
+COMMENT ON COLUMN outbox_event.event_type IS '다운스트림 핸들러가 분기할 의미적 이벤트 이름이다.';
+COMMENT ON COLUMN outbox_event.aggregate_type IS '이벤트를 발생시킨 애그리거트 종류이다.';
+COMMENT ON COLUMN outbox_event.aggregate_id IS '소스 서비스 내부의 애그리거트 식별자이다.';
+COMMENT ON COLUMN outbox_event.saga_id IS '사가 흐름에 참여하는 경우 사용하는 사가 실행 식별자이다.';
+COMMENT ON COLUMN outbox_event.correlation_id IS '관련 명령과 이벤트를 묶어서 추적하기 위한 상관관계 식별자이다.';
+COMMENT ON COLUMN outbox_event.causation_id IS '현재 이벤트를 직접 유발한 상위 명령 또는 이벤트 식별자이다.';
+COMMENT ON COLUMN outbox_event.payload_json IS 'Kafka 발행 전에 저장해 두는 JSON 직렬화 메시지 본문이다.';
+COMMENT ON COLUMN outbox_event.status IS 'relay 발행 상태이며 PENDING, PUBLISHED, FAILED 중 하나이다.';
+COMMENT ON COLUMN outbox_event.retry_count IS 'relay가 기록한 발행 재시도 횟수이다.';
+COMMENT ON COLUMN outbox_event.published_at IS 'relay가 Kafka 발행에 성공한 시각이다.';
+COMMENT ON COLUMN outbox_event.last_error IS '가장 마지막 발행 실패 메시지이다.';
+COMMENT ON COLUMN outbox_event.created_at IS 'outbox row가 최초 생성된 시각이다.';
+COMMENT ON COLUMN outbox_event.updated_at IS 'outbox row가 마지막으로 수정된 시각이다.';
+
+COMMENT ON TABLE processed_event IS 'consumer group별 이벤트 중복 처리를 막기 위해 처리 이력을 저장하는 inbox dedupe 테이블이다.';
+COMMENT ON COLUMN processed_event.processed_event_id IS '내부 영속성 처리용 대체 기본 키이다.';
+COMMENT ON COLUMN processed_event.consumer_group IS '해당 이벤트를 처리한 Kafka consumer group 이름이다.';
+COMMENT ON COLUMN processed_event.event_id IS '중복 처리를 막기 위해 저장하는 이벤트 식별자이다.';
+COMMENT ON COLUMN processed_event.event_type IS '처리한 이벤트의 의미적 이름이다.';
+COMMENT ON COLUMN processed_event.topic IS '이벤트를 소비한 Kafka 토픽 이름이다.';
+COMMENT ON COLUMN processed_event.processed_at IS '이벤트를 처리 완료로 기록한 시각이다.';

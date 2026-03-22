@@ -1,4 +1,4 @@
-package com.msashop.auth.config;
+package com.msashop.user.config;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.annotation.EnableKafka;

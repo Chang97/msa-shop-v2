@@ -22,6 +22,7 @@ spring:
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
       acks: all
     consumer:
+      group-id: auth-service-auth-user-saga
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       auto-offset-reset: earliest
@@ -128,4 +129,3 @@ security:
     access-token-ttl-seconds: 1800
     private-key-location: classpath:keys/jwt-private.pem
     public-key-location: classpath:keys/jwt-public.pem
-
