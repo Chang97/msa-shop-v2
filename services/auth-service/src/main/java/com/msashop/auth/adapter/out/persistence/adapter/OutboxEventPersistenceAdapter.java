@@ -23,8 +23,6 @@ public class OutboxEventPersistenceAdapter implements OutboxEventPort {
     @Override
     @Transactional
     public void append(EventEnvelope envelope) {
-        // 현재 relay는 payloadJson 컬럼을 Kafka로 그대로 보내므로
-        // outbox row에는 EventEnvelope 전체 JSON 문자열을 저장한다.
         String messageJson = writeJson(envelope);
 
         repository.save(OutboxEventJpaEntity.builder()
@@ -44,11 +42,15 @@ public class OutboxEventPersistenceAdapter implements OutboxEventPort {
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public List<OutboxEventJpaEntity> loadPending(int limit) {
-        // 처음 단계에서는 limit 파라미터를 그대로 쓰지 못해도 동작은 가능하다.
-        // 다만 메서드 이름과 실제 limit 값이 어긋나지 않도록 나중에 맞추는 편이 낫다.
-        return repository.findTop100ByStatusOrderByOutboxEventIdAsc(OutboxStatus.PENDING);
+    @Transactional
+    public List<OutboxEventJpaEntity> claimPending(String workerId, int limit, Instant now) {
+        List<OutboxEventJpaEntity> events = repository.findClaimable(limit, now);
+
+        for (OutboxEventJpaEntity event : events) {
+            event.markProcessing(workerId, now);
+        }
+
+        return events;
     }
 
     @Override
@@ -60,9 +62,30 @@ public class OutboxEventPersistenceAdapter implements OutboxEventPort {
 
     @Override
     @Transactional
-    public void markFailed(Long outboxEventId, String errorMessage) {
+    public void handlePublishFailure(
+            Long outboxEventId,
+            String errorMessage,
+            Instant now,
+            int maxRetryCount,
+            long retryDelaySeconds
+    ) {
         OutboxEventJpaEntity entity = repository.findById(outboxEventId).orElseThrow();
-        entity.markFailed(errorMessage);
+
+        // 이번 실패를 반영하면 최대 재시도 횟수를 넘는지 먼저 계산한다.
+        int nextRetryCount = entity.getRetryCount() + 1;
+
+        if (nextRetryCount >= maxRetryCount) {
+            entity.markFailed(errorMessage);
+            return;
+        }
+
+        entity.scheduleRetry(errorMessage, now.plusSeconds(retryDelaySeconds));
+    }
+
+    @Override
+    @Transactional
+    public int releaseStaleClaims(Instant threshold) {
+        return repository.releaseStaleClaims(threshold);
     }
 
     private String writeJson(Object value) {
@@ -72,4 +95,5 @@ public class OutboxEventPersistenceAdapter implements OutboxEventPort {
             throw new IllegalStateException("Outbox 메시지 직렬화에 실패했습니다.", e);
         }
     }
+
 }

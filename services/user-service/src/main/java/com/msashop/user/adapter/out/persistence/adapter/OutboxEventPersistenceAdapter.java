@@ -23,9 +23,6 @@ public class OutboxEventPersistenceAdapter implements OutboxEventPort {
     @Override
     @Transactional
     public void append(EventEnvelope envelope) {
-        // 현재 relay는 payloadJson 컬럼 값을 Kafka로 그대로 보내므로
-        // 여기서는 EventEnvelope 전체를 JSON 문자열로 저장한다.
-        // 컬럼명이 payload_json이라 약간 어색하지만, 지금 스켈레톤을 최소 수정으로 살리는 방법이다.
         String messageJson = writeJson(envelope);
 
         repository.save(OutboxEventJpaEntity.builder()
@@ -45,9 +42,15 @@ public class OutboxEventPersistenceAdapter implements OutboxEventPort {
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public List<OutboxEventJpaEntity> loadPending(int limit) {
-        return repository.findTop100ByStatusOrderByOutboxEventIdAsc(OutboxStatus.PENDING);
+    @Transactional
+    public List<OutboxEventJpaEntity> claimPending(String workerId, int limit, Instant now) {
+        List<OutboxEventJpaEntity> events = repository.findClaimable(limit, now);
+
+        for (OutboxEventJpaEntity event : events) {
+            event.markProcessing(workerId, now);
+        }
+
+        return events;
     }
 
     @Override
@@ -59,16 +62,37 @@ public class OutboxEventPersistenceAdapter implements OutboxEventPort {
 
     @Override
     @Transactional
-    public void markFailed(Long outboxEventId, String errorMessage) {
+    public void handlePublishFailure(
+            Long outboxEventId,
+            String errorMessage,
+            Instant now,
+            int maxRetryCount,
+            long retryDelaySeconds
+    ) {
         OutboxEventJpaEntity entity = repository.findById(outboxEventId).orElseThrow();
-        entity.markFailed(errorMessage);
+
+        // 이번 실패를 반영하면 최대 재시도 횟수를 넘는지 먼저 계산한다.
+        int nextRetryCount = entity.getRetryCount() + 1;
+
+        if (nextRetryCount >= maxRetryCount) {
+            entity.markFailed(errorMessage);
+            return;
+        }
+
+        entity.scheduleRetry(errorMessage, now.plusSeconds(retryDelaySeconds));
+    }
+
+    @Override
+    @Transactional
+    public int releaseStaleClaims(Instant threshold) {
+        return repository.releaseStaleClaims(threshold);
     }
 
     private String writeJson(Object value) {
         try {
             return objectMapper.writeValueAsString(value);
         } catch (Exception e) {
-            throw new IllegalArgumentException("Outbox 메시지 직렬화에 실패했습니다.", e);
+            throw new IllegalStateException("Outbox 메시지 직렬화에 실패했습니다.", e);
         }
     }
 }

@@ -1,8 +1,7 @@
 package com.msashop.user.domain.model;
 
-public enum OutboxStatus {
+public enum ProcessedEventStatus {
     PENDING,
     PROCESSING,
-    PUBLISHED,
-    FAILED
+    PROCESSED
 }

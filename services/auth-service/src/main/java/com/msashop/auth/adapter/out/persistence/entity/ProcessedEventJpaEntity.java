@@ -1,5 +1,6 @@
 package com.msashop.auth.adapter.out.persistence.entity;
 
+import com.msashop.auth.domain.model.ProcessedEventStatus;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -32,6 +33,20 @@ public class ProcessedEventJpaEntity {
     @Column(nullable = false, length = 200)
     private String topic;
 
-    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    private ProcessedEventStatus status;
+
+    /**
+     * 최종적으로 처리가 완료된 시각.
+     * PROCESSING 단계에서는 null일 수 있다.
+     */
     private Instant processedAt;
+
+    @Column(length = 100)
+    private String lockedBy;
+
+    private Instant lockedAt;
+
+    private String lastError;
 }

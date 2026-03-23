@@ -3,13 +3,9 @@ package com.msashop.user.adapter.in.messaging;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.msashop.common.event.EventEnvelope;
 import com.msashop.common.event.EventTypes;
-import com.msashop.common.event.payload.AuthUserCreatedPayload;
-import com.msashop.common.web.exception.BusinessException;
-import com.msashop.user.application.event.UserSagaEventFactory;
-import com.msashop.user.application.port.in.ProvisionUserProfileUseCase;
-import com.msashop.user.application.port.in.model.ProvisionUserProfileCommand;
-import com.msashop.user.application.port.out.OutboxEventPort;
-import com.msashop.user.application.port.out.ProcessedEventPort;
+import com.msashop.common.event.InvalidSagaMessageException;
+import com.msashop.user.adapter.out.messaging.SagaDeadLetterPublisher;
+import com.msashop.user.application.port.in.HandleAuthUserCreatedSagaUseCase;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -23,60 +19,69 @@ import org.springframework.stereotype.Component;
 public class AuthUserSagaKafkaConsumer {
 
     private final ObjectMapper objectMapper;
-    private final ProcessedEventPort processedEventPort;
-    private final ProvisionUserProfileUseCase provisionUserProfileUseCase;
-    private final OutboxEventPort outboxEventPort;
-    private final UserSagaEventFactory eventFactory;
+    private final HandleAuthUserCreatedSagaUseCase handleAuthUserCreatedSagaUseCase;
+    private final SagaDeadLetterPublisher sagaDeadLetterPublisher;
 
     @Value("${spring.kafka.consumer.group-id}")
     private String consumerGroup;
 
+    @Value("${app.kafka.consumers.worker-id:${spring.application.name}}")
+    private String workerId;
+
+    @Value("${app.kafka.consumers.claim-timeout-seconds:300}")
+    private long claimTimeoutSeconds;
+
+    @Value("${app.kafka.topics.auth-user-saga}")
+    private String sagaTopic;
+
+    @Value("${app.kafka.topics.auth-user-saga-dlq}")
+    private String dlqTopic;
+
     @KafkaListener(topics = "${app.kafka.topics.auth-user-saga}")
     public void onMessage(String rawMessage, Acknowledgment ack) throws Exception {
-        EventEnvelope envelope = objectMapper.readValue(rawMessage, EventEnvelope.class);
+        EventEnvelope envelope;
+        try {
+            envelope = objectMapper.readValue(rawMessage, EventEnvelope.class);
+        } catch (Exception e) {
+            sagaDeadLetterPublisher.publish(
+                    dlqTopic,
+                    sagaTopic,
+                    consumerGroup,
+                    "EVENT_ENVELOPE_DESERIALIZATION_FAILED",
+                    e.getMessage(),
+                    rawMessage
+            );
+            ack.acknowledge();
+            return;
+        }
 
-        // user-service가 처리할 이벤트가 아니면 ack 하고 넘긴다.
+        // user-service는 saga 시작 이벤트만 처리한다.
         if (!EventTypes.AUTH_USER_CREATED.equals(envelope.eventType())) {
             ack.acknowledge();
             return;
         }
 
-        // 이미 처리한 eventId면 중복 소비이므로 비즈니스 로직 없이 ack 한다.
-        if (processedEventPort.exists(consumerGroup, envelope.eventId())) {
-            ack.acknowledge();
-            return;
-        }
-
-        // envelope.payloadJson 안의 실제 비즈니스 payload를 역직렬화한다.
-        AuthUserCreatedPayload payload = objectMapper.readValue(envelope.payloadJson(), AuthUserCreatedPayload.class);
-
         try {
-            Long createdUserId = provisionUserProfileUseCase.provision(new ProvisionUserProfileCommand(
-                    payload.authUserId(),
-                    payload.userName(),
-                    payload.empNo(),
-                    payload.pstnName(),
-                    payload.tel()
-            ));
+            boolean handled = handleAuthUserCreatedSagaUseCase.handle(
+                    consumerGroup,
+                    workerId,
+                    claimTimeoutSeconds,
+                    envelope
+            );
 
-            // 성공 결과 이벤트를 같은 로컬 트랜잭션 안에서 outbox에 적재한다.
-            outboxEventPort.append(eventFactory.userProfileCreated(envelope, payload.authUserId(), createdUserId));
-
-            // 처리 이력 저장 후 ack
-            processedEventPort.save(consumerGroup, envelope);
+            if (handled) {
+                ack.acknowledge();
+            }
+        } catch (InvalidSagaMessageException e) {
+            sagaDeadLetterPublisher.publish(
+                    dlqTopic,
+                    sagaTopic,
+                    consumerGroup,
+                    e.reasonCode(),
+                    e.getMessage(),
+                    rawMessage
+            );
             ack.acknowledge();
-            return;
-        } catch (BusinessException e) {
-            // 비즈니스 실패는 사가 실패로 간주하고 실패 이벤트를 발행
-            outboxEventPort.append(eventFactory.userProfileCreationFailed(
-                    envelope,
-                    payload.authUserId(),
-                    "USER_PROFILE_PERSISTENCE_FAILED",
-                    e.getMessage()
-            ));
-            processedEventPort.save(consumerGroup, envelope);
-            ack.acknowledge();
-            return;
         }
     }
 }

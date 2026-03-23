@@ -54,12 +54,19 @@ app:
   kafka:
     topics:
       auth-user-saga: auth.user.saga.v1
+      auth-user-saga-dlq: auth.user.saga.v1.dlq
     consumers:
       auth-user-saga-enabled: true
+      worker-id: ${HOSTNAME:user-service}
+      claim-timeout-seconds: 300
     producer:
       relay-enabled: true
       batch-size: 100
       fixed-delay-ms: 3000
+      worker-id: ${HOSTNAME:user-service}
+      claim-timeout-seconds: 300
+      max-retry-count: 5
+      retry-delay-seconds: 30
 
 # JWT ?? ??? ?? ? ? ?? ??
 security:
