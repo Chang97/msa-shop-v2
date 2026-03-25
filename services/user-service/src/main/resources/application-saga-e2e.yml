@@ -1,0 +1,38 @@
+spring:
+  kafka:
+    # Saga E2E runs against the local Kafka broker from docker-compose.
+    bootstrap-servers: localhost:19092
+
+decorator:
+  datasource:
+    # Disable SQL logging noise during outbox/inbox polling.
+    p6spy:
+      enabled: false
+
+app:
+  kafka:
+    topics:
+      auth-user-saga-dlq: auth.user.saga.v1.dlq
+    consumers:
+      # Enable user-service consumer for signup saga start events.
+      auth-user-saga-enabled: true
+      worker-id: ${HOSTNAME:user-service}
+      claim-timeout-seconds: 300
+    producer:
+      # Enable outbox relay for saga E2E.
+      relay-enabled: true
+      batch-size: 20
+      fixed-delay-ms: 1000
+      worker-id: ${HOSTNAME:user-service}
+      claim-timeout-seconds: 300
+      max-retry-count: 5
+      retry-delay-seconds: 30
+
+logging:
+  level:
+    p6spy: OFF
+    org.hibernate.SQL: OFF
+    org.hibernate.orm.jdbc.bind: OFF
+    org.apache.kafka: WARN
+    org.springframework.kafka: WARN
+    kafka: WARN

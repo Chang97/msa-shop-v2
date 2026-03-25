@@ -1,0 +1,20 @@
+clients:
+  order:
+    base-url: http://order-service:8083
+
+spring:
+  kafka:
+    bootstrap-servers: kafka:29092
+
+  datasource:
+    url: jdbc:postgresql://postgres:5432/payment_db
+
+  data:
+    redis:
+      host: redis
+      port: 6379
+
+security:
+  internal:
+    service-secret: ${INTERNAL_SERVICE_SECRET:local-internal-secret}
+

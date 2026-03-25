@@ -15,6 +15,20 @@ spring:
     enabled: true
     baseline-on-migrate: true
     locations: classpath:db/migration, classpath:db/seed/local
+  kafka:
+    bootstrap-servers: localhost:19092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+    consumer:
+      group-id: auth-service-auth-user-saga
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+    listener:
+      ack-mode: manual
 
   devtools:
     restart:
@@ -78,6 +92,22 @@ app:
     authority:
       cache-ttl-seconds: 600          # ?? ?? TTL(?) = 10?
       key-prefix: auth:perm           # ?? ?? ? prefix
+  kafka:
+    topics:
+      auth-user-saga: auth.user.saga.v1
+      auth-user-saga-dlq: auth.user.saga.v1.dlq
+    consumers:
+      auth-user-saga-enabled: true
+      worker-id: ${HOSTNAME:auth-service}
+      claim-timeout-seconds: 300
+    producer:
+      relay-enabled: true
+      batch-size: 100
+      fixed-delay-ms: 3000
+      worker-id: ${HOSTNAME:auth-service}
+      claim-timeout-seconds: 300
+      max-retry-count: 5
+      retry-delay-seconds: 30
 
 
   # (??) ??/??? ??? ??? ? ??
@@ -106,4 +136,3 @@ security:
     access-token-ttl-seconds: 1800
     private-key-location: classpath:keys/jwt-private.pem
     public-key-location: classpath:keys/jwt-public.pem
-

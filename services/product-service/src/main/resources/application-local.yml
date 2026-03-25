@@ -5,6 +5,20 @@ spring:
   debug: true
   application:
     name: product-service
+  kafka:
+    bootstrap-servers: localhost:19092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+    consumer:
+      group-id: product-service-order-payment-saga
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+    listener:
+      ack-mode: manual
   flyway:
     enabled: true
     baseline-on-migrate: true
@@ -34,6 +48,22 @@ app:
     product:
       ttl-seconds: 300
       key-prefix: product:detail
+  kafka:
+    topics:
+      order-payment-saga: order.payment.saga.v1
+      order-payment-saga-dlq: order.payment.saga.v1.dlq
+    consumers:
+      order-payment-saga-enabled: false
+      worker-id: ${HOSTNAME:product-service}
+      claim-timeout-seconds: 300
+    producer:
+      relay-enabled: false
+      batch-size: 100
+      fixed-delay-ms: 3000
+      worker-id: ${HOSTNAME:product-service}
+      claim-timeout-seconds: 300
+      max-retry-count: 5
+      retry-delay-seconds: 30
 
 # JWT ?? ??? ?? ? ? ?? ??
 security:

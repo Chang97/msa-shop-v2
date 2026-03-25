@@ -16,6 +16,10 @@ public final class PaymentTransactionMapper {
                 entity.getIdempotencyKey(),
                 entity.getProvider(),
                 entity.getProviderTxId(),
+                entity.getReservationId(),
+                entity.getSagaId(),
+                entity.getCorrelationId(),
+                entity.getSourceEventId(),
                 entity.getStatus(),
                 entity.getRequestedAt(),
                 entity.getApprovedAt(),
@@ -36,6 +40,10 @@ public final class PaymentTransactionMapper {
                 .idempotencyKey(payment.getIdempotencyKey())
                 .provider(payment.getProvider())
                 .providerTxId(payment.getProviderTxId())
+                .reservationId(payment.getReservationId())
+                .sagaId(payment.getSagaId())
+                .correlationId(payment.getCorrelationId())
+                .sourceEventId(payment.getSourceEventId())
                 .status(payment.getStatus())
                 .requestedAt(payment.getRequestedAt())
                 .approvedAt(payment.getApprovedAt())
@@ -44,4 +52,3 @@ public final class PaymentTransactionMapper {
                 .build();
     }
 }
-

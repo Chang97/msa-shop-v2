@@ -1,7 +1,8 @@
 package com.msashop.payment.domain.model;
 
 public enum PaymentStatus {
-    PENDING,
+    REQUESTED,
+    APPROVAL_UNKNOWN,
     APPROVED,
     FAILED
 }

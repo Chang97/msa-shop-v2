@@ -18,4 +18,10 @@ public interface ProductCommandJpaRepository extends JpaRepository<ProductEntity
     int decreaseStock(@Param("productId") Long productId,
                       @Param("qty") Integer qty,
                       @Param("status") ProductStatus status);
+
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("update ProductEntity p set p.stock = p.stock + :qty " +
+            "where p.productId = :productId")
+    int increaseStock(@Param("productId") Long productId,
+                      @Param("qty") Integer qty);
 }

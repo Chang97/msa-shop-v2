@@ -98,4 +98,32 @@ public class E2EClient {
                 .post(path)
                 .andReturn();
     }
+
+    /**
+     * 회원가입 요청을 gateway를 통해 보낸다.
+     * saga는 비동기지만 register API 자체는 즉시 응답하므로 Response를 그대로 반환한다.
+     */
+    public Response register(TestFixtures.RegisterRequest request) {
+        return postJson("/api/auth/register", null, request);
+    }
+
+    /**
+     * 로그인 요청 helper.
+     * saga 완료 전에는 실패할 수 있으므로 polling과 함께 쓰기 좋다.
+     */
+    public Response login(String loginId, String password) {
+        return postJson(
+                "/api/auth/login",
+                null,
+                new TestFixtures.LoginRequest(loginId, password)
+        );
+    }
+
+    /**
+     * 현재 로그인한 사용자의 내 정보 조회.
+     * 회원가입 saga가 끝난 뒤 user-service profile이 준비되었는지 검증할 때 사용한다.
+     */
+    public Response getMe(String accessToken) {
+        return get("/api/users/me", accessToken);
+    }
 }

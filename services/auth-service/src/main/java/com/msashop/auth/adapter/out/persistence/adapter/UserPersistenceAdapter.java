@@ -58,6 +58,20 @@ public class UserPersistenceAdapter implements LoadUserPort, CredentialPort, Use
 
     @Override
     @Transactional
+    public Long saveDisabledCredential(String email, String loginId, String passwordHash) {
+        AuthUserCredentialJpaEntity saved = credentialRepo.save(
+                AuthUserCredentialJpaEntity.builder()
+                        .email(email)
+                        .loginId(loginId)
+                        .passwordHash(passwordHash)
+                        .enabled(false)
+                        .build()
+        );
+        return saved.getUserId();
+    }
+
+    @Override
+    @Transactional
     public void disable(Long authUserId) {
         AuthUserCredentialJpaEntity entity = credentialRepo.findById(authUserId)
                 .orElseThrow();
@@ -83,5 +97,13 @@ public class UserPersistenceAdapter implements LoadUserPort, CredentialPort, Use
                             .build()
             );
         }
+    }
+
+    @Override
+    @Transactional
+    public void enable(Long authUserId) {
+        AuthUserCredentialJpaEntity entity = credentialRepo.findById(authUserId)
+                .orElseThrow();
+        entity.enable();
     }
 }
