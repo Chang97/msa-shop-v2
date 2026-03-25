@@ -3,6 +3,7 @@ package com.msashop.order.adapter.in.web;
 import com.msashop.order.adapter.in.web.dto.CancelOrderRequest;
 import com.msashop.order.adapter.in.web.dto.CreateOrderRequest;
 import com.msashop.order.adapter.in.web.dto.OrderCommandResponse;
+import com.msashop.order.adapter.in.web.dto.PayOrderRequest;
 import com.msashop.order.adapter.in.web.mapper.OrderWebCommandMapper;
 import com.msashop.order.application.port.in.CancelOrderUseCase;
 import com.msashop.order.application.port.in.CreateOrderUseCase;
@@ -37,8 +38,16 @@ public class OrderCommandController {
     @PreAuthorize("hasAnyAuthority('ROLE_USER','ROLE_ADMIN')")
     @PostMapping("/{orderId}/pay")
     public ResponseEntity<Void> pay(@AuthenticationPrincipal CurrentUser currentUser,
-                                    @PathVariable Long orderId) {
-        payOrderUseCase.payOrder(new PayOrderCommand(orderId, currentUser.userId()));
+                                    @PathVariable Long orderId,
+                                    @Valid @RequestBody PayOrderRequest request) {
+        payOrderUseCase.payOrder(
+                new PayOrderCommand(
+                        orderId,
+                        currentUser.userId(),
+                        request.idempotencyKey(),
+                        request.provider()
+                )
+        );
         return ResponseEntity.noContent().build();
     }
 

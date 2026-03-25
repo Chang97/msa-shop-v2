@@ -1,0 +1,128 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1660" height="980" viewBox="0 0 1660 980" role="img" aria-labelledby="title desc">
+  <title id="title">MSA Shop v2 시스템 다이어그램</title>
+  <desc id="desc">Gateway, Auth, User, Product, Order, Payment 서비스와 Kafka, 각 서비스 데이터베이스의 관계를 설명하는 다이어그램</desc>
+  <defs>
+    <style>
+      .bg { fill: #f6f7fb; }
+      .gateway { fill: #0f4c81; stroke: #0b3557; stroke-width: 2.5; rx: 20; ry: 20; }
+      .service { fill: #ffffff; stroke: #2c4f7c; stroke-width: 2.5; rx: 18; ry: 18; }
+      .serviceAlt { fill: #f8fbff; stroke: #2c4f7c; stroke-width: 2.5; rx: 18; ry: 18; }
+      .infra { fill: #fff8e8; stroke: #d6a437; stroke-width: 2.5; rx: 18; ry: 18; }
+      .db { fill: #edf6ee; stroke: #4f8a5b; stroke-width: 2.5; rx: 16; ry: 16; }
+      .title { font: 700 30px 'Pretendard', 'Noto Sans KR', sans-serif; fill: #162033; }
+      .subtitle { font: 500 18px 'Pretendard', 'Noto Sans KR', sans-serif; fill: #3f4e69; }
+      .gatewayTitle { font: 700 26px 'Pretendard', 'Noto Sans KR', sans-serif; fill: #ffffff; }
+      .gatewayBody { font: 500 15px 'Pretendard', 'Noto Sans KR', sans-serif; fill: #e4f1ff; }
+      .serviceTitle { font: 700 23px 'Pretendard', 'Noto Sans KR', sans-serif; fill: #173256; }
+      .body { font: 500 16px 'Pretendard', 'Noto Sans KR', sans-serif; fill: #33415c; }
+      .dbTitle { font: 700 18px 'Pretendard', 'Noto Sans KR', sans-serif; fill: #275234; }
+      .dbText { font: 500 14px 'Pretendard', 'Noto Sans KR', sans-serif; fill: #3f6547; }
+      .kafkaTitle { font: 700 24px 'Pretendard', 'Noto Sans KR', sans-serif; fill: #7a430c; }
+      .kafkaBody { font: 500 15px 'Pretendard', 'Noto Sans KR', sans-serif; fill: #895626; }
+      .line { stroke: #58677e; stroke-width: 2.5; fill: none; marker-end: url(#arrow); }
+      .lineKafka { stroke: #cc6b1d; stroke-width: 3; fill: none; marker-end: url(#arrowKafka); }
+      .lineDb { stroke: #58677e; stroke-width: 2.5; fill: none; stroke-dasharray: 8 7; marker-end: url(#arrow); }
+      .lineDbPlain { stroke: #58677e; stroke-width: 2.5; fill: none; stroke-dasharray: 8 7; }
+      .note { font: 500 14px 'Pretendard', 'Noto Sans KR', sans-serif; fill: #51627d; }
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#58677e" />
+    </marker>
+    <marker id="arrowKafka" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#cc6b1d" />
+    </marker>
+  </defs>
+
+  <rect class="bg" width="1660" height="980" />
+  <text x="56" y="60" class="title">MSA Shop v2 시스템 구조</text>
+  <text x="56" y="95" class="subtitle">Gateway가 외부 요청과 인증을 담당하고, 각 서비스는 자신의 DB와 책임만 소유한다. 장기 비즈니스 흐름은 Kafka 기반 Saga로 연결한다.</text>
+
+  <rect x="670" y="130" width="320" height="110" class="gateway" />
+  <text x="830" y="176" text-anchor="middle" class="gatewayTitle">Gateway</text>
+  <text x="830" y="204" text-anchor="middle" class="gatewayBody">JWT 검증</text>
+  <text x="830" y="226" text-anchor="middle" class="gatewayBody">X-User-Id / X-Roles 전달</text>
+
+  <rect x="80" y="320" width="260" height="170" class="service" />
+  <text x="210" y="362" text-anchor="middle" class="serviceTitle">auth-service</text>
+  <text x="210" y="396" text-anchor="middle" class="body">• 로그인 / 토큰 발급</text>
+  <text x="210" y="424" text-anchor="middle" class="body">• 자격 증명 관리</text>
+  <text x="210" y="452" text-anchor="middle" class="body">• 회원가입 Saga 시작 / 완료</text>
+
+  <rect x="390" y="320" width="260" height="170" class="serviceAlt" />
+  <text x="520" y="362" text-anchor="middle" class="serviceTitle">user-service</text>
+  <text x="520" y="396" text-anchor="middle" class="body">• 사용자 프로필 관리</text>
+  <text x="520" y="424" text-anchor="middle" class="body">• auth-user saga 참여</text>
+  <text x="520" y="452" text-anchor="middle" class="body">• 회원 상세 정보 소유</text>
+
+  <rect x="700" y="320" width="260" height="170" class="service" />
+  <text x="830" y="362" text-anchor="middle" class="serviceTitle">product-service</text>
+  <text x="830" y="396" text-anchor="middle" class="body">• 상품 / 재고 관리</text>
+  <text x="830" y="424" text-anchor="middle" class="body">• stock_reservation 소유</text>
+  <text x="830" y="452" text-anchor="middle" class="body">• 재고 예약 / 확정 / 해제</text>
+
+  <rect x="1010" y="320" width="260" height="170" class="serviceAlt" />
+  <text x="1140" y="362" text-anchor="middle" class="serviceTitle">order-service</text>
+  <text x="1140" y="396" text-anchor="middle" class="body">• 주문 생성 / 조회 / 취소</text>
+  <text x="1140" y="424" text-anchor="middle" class="body">• 결제 시작 이벤트 발행</text>
+  <text x="1140" y="452" text-anchor="middle" class="body">• 결제 결과에 따른 상태 반영</text>
+
+  <rect x="1320" y="320" width="260" height="170" class="service" />
+  <text x="1450" y="362" text-anchor="middle" class="serviceTitle">payment-service</text>
+  <text x="1450" y="396" text-anchor="middle" class="body">• PG 호출 및 상태 저장</text>
+  <text x="1450" y="424" text-anchor="middle" class="body">• APPROVAL_UNKNOWN 관리</text>
+  <text x="1450" y="452" text-anchor="middle" class="body">• reconciliation 처리</text>
+
+  <rect x="420" y="560" width="820" height="140" class="infra" />
+  <text x="830" y="605" text-anchor="middle" class="kafkaTitle">Kafka</text>
+  <text x="830" y="636" text-anchor="middle" class="kafkaBody">auth.user.saga.v1 / order.payment.saga.v1 / DLQ</text>
+  <text x="830" y="664" text-anchor="middle" class="kafkaBody">Outbox relay, Inbox claim, 멱등 처리, 실패 격리</text>
+
+  <rect x="80" y="820" width="240" height="100" class="db" />
+  <text x="200" y="861" text-anchor="middle" class="dbTitle">auth_db</text>
+  <text x="200" y="887" text-anchor="middle" class="dbText">auth_user</text>
+  <text x="200" y="907" text-anchor="middle" class="dbText">outbox_event / processed_event</text>
+
+  <rect x="390" y="820" width="240" height="100" class="db" />
+  <text x="510" y="861" text-anchor="middle" class="dbTitle">user_db</text>
+  <text x="510" y="887" text-anchor="middle" class="dbText">user_profile</text>
+  <text x="510" y="907" text-anchor="middle" class="dbText">outbox_event / processed_event</text>
+
+  <rect x="700" y="820" width="240" height="100" class="db" />
+  <text x="820" y="861" text-anchor="middle" class="dbTitle">product_db</text>
+  <text x="820" y="887" text-anchor="middle" class="dbText">product / stock_reservation</text>
+  <text x="820" y="907" text-anchor="middle" class="dbText">outbox_event / processed_event</text>
+
+  <rect x="1010" y="820" width="240" height="100" class="db" />
+  <text x="1130" y="861" text-anchor="middle" class="dbTitle">order_db</text>
+  <text x="1130" y="887" text-anchor="middle" class="dbText">orders / order_status_history</text>
+  <text x="1130" y="907" text-anchor="middle" class="dbText">outbox_event / processed_event</text>
+
+  <rect x="1320" y="820" width="240" height="100" class="db" />
+  <text x="1440" y="861" text-anchor="middle" class="dbTitle">payment_db</text>
+  <text x="1440" y="887" text-anchor="middle" class="dbText">payment_transaction</text>
+  <text x="1440" y="907" text-anchor="middle" class="dbText">outbox_event / processed_event</text>
+
+  <path class="line" d="M740 240 L210 320" />
+  <path class="line" d="M780 240 L520 320" />
+  <path class="line" d="M820 240 L830 320" />
+  <path class="line" d="M860 240 L1140 320" />
+  <path class="line" d="M900 240 L1450 320" />
+
+  <path class="lineKafka" d="M210 490 L210 620 L420 620" />
+  <path class="lineKafka" d="M520 490 L520 560" />
+  <path class="lineKafka" d="M830 490 L830 560" />
+  <path class="lineKafka" d="M1140 490 L1140 560" />
+  <path class="lineKafka" d="M1450 490 L1450 620 L1240 620" />
+
+  <path class="lineDb" d="M200 490 L200 820" />
+  <path class="lineDbPlain" d="M510 490 L510 560" />
+  <path class="lineDbPlain" d="M820 490 L820 560" />
+  <path class="lineDbPlain" d="M1130 490 L1130 560" />
+  <path class="lineDb" d="M1440 490 L1440 820" />
+
+  <path class="lineDb" d="M510 700 L510 780 L510 820" />
+  <path class="lineDb" d="M820 700 L820 780 L820 820" />
+  <path class="lineDb" d="M1130 700 L1130 780 L1130 820" />
+
+  <text x="56" y="956" class="note">핵심 원칙: 서비스는 자신의 DB만 조회하고, 서비스 간 장기 비즈니스 흐름은 이벤트로 연결하며, 각 이벤트는 outbox / inbox claim으로 멱등 처리한다.</text>
+</svg>

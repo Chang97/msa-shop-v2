@@ -1,9 +1,12 @@
 package com.msashop.common.event;
 
 public final class EventTopics {
-    private EventTopics() {}
-
-    /** auth-service와 user-service 간 사가 이벤트에 사용하는 토픽이다. */
+    private EventTopics() {
+    }
+    // 회원가입
     public static final String AUTH_USER_SAGA_V1 = "auth.user.saga.v1";
     public static final String AUTH_USER_SAGA_V1_DLQ = "auth.user.saga.v1.dlq";
+    // 결제
+    public static final String ORDER_PAYMENT_SAGA_V1 = "order.payment.saga.v1";
+    public static final String ORDER_PAYMENT_SAGA_V1_DLQ = "order.payment.saga.v1.dlq";
 }

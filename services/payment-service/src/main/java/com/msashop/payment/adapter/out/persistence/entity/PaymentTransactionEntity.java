@@ -44,6 +44,18 @@ public class PaymentTransactionEntity extends BaseAuditEntity {
     @Column(name = "provider_tx_id", length = 100)
     private String providerTxId;
 
+    @Column(name = "reservation_id", length = 64)
+    private String reservationId;
+
+    @Column(name = "saga_id", length = 100)
+    private String sagaId;
+
+    @Column(name = "correlation_id", length = 100)
+    private String correlationId;
+
+    @Column(name = "source_event_id", length = 100)
+    private String sourceEventId;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 30)
     private PaymentStatus status;
@@ -60,4 +72,3 @@ public class PaymentTransactionEntity extends BaseAuditEntity {
     @Column(name = "fail_reason")
     private String failReason;
 }
-

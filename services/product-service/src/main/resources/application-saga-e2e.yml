@@ -1,0 +1,26 @@
+spring:
+  kafka:
+    bootstrap-servers: localhost:19092
+
+app:
+  kafka:
+    consumers:
+      order-payment-saga-enabled: true
+      worker-id: ${HOSTNAME:product-service}
+      claim-timeout-seconds: 300
+    producer:
+      relay-enabled: true
+      batch-size: 20
+      fixed-delay-ms: 1000
+      worker-id: ${HOSTNAME:product-service}
+      claim-timeout-seconds: 300
+      max-retry-count: 5
+      retry-delay-seconds: 30
+
+logging:
+  level:
+    org.apache.kafka: WARN
+    org.springframework.kafka: WARN
+    kafka: WARN
+    org.hibernate.SQL: OFF
+    org.hibernate.orm.jdbc.bind: OFF
