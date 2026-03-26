@@ -2,22 +2,18 @@ package com.msashop.order.adapter.out.client;
 
 import com.msashop.common.web.exception.CommonErrorCode;
 import com.msashop.common.web.exception.NotFoundException;
-import com.msashop.order.application.port.out.DecreaseProductStockPort;
 import com.msashop.order.application.port.out.LoadProductPort;
 import com.msashop.order.application.port.out.model.ProductRow;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
-import java.util.List;
-import java.util.Map;
-
 @Component
 @RequiredArgsConstructor
-public class ProductClientAdapter implements LoadProductPort, DecreaseProductStockPort {
+public class ProductClientAdapter implements LoadProductPort {
 
     private final WebClient webClient;
 
@@ -69,29 +65,4 @@ public class ProductClientAdapter implements LoadProductPort, DecreaseProductSto
                                    String status,
                                    Boolean useYn) {}
 
-    @Override
-    public void decreaseStocks(Map<Long, Integer> quantitiesByProductId) {
-        if (quantitiesByProductId == null || quantitiesByProductId.isEmpty()) {
-            return;
-        }
-
-        List<StockItem> items = quantitiesByProductId.entrySet().stream()
-                .map(e -> new StockItem(e.getKey(), e.getValue()))
-                .toList();
-
-        String url = productBaseUrl.endsWith("/") ? productBaseUrl + "decrease-stock" : productBaseUrl + "/decrease-stock";
-
-        webClient.post()
-                .uri(url)
-                .header(internalHeaderName, internalServiceSecret)
-                .contentType(MediaType.APPLICATION_JSON)
-                .bodyValue(new StockDecreaseRequest(items))
-                .retrieve()
-                .toBodilessEntity()
-                .block();
-    }
-
-    private record StockDecreaseRequest(List<StockItem> items) {}
-
-    private record StockItem(Long productId, Integer quantity) {}
 }

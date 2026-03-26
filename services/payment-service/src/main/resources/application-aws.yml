@@ -4,8 +4,12 @@ server:
 spring:
   application:
     name: payment-service
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
   kafka:
-    bootstrap-servers: localhost:19092
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -18,24 +22,18 @@ spring:
       enable-auto-commit: false
     listener:
       ack-mode: manual
-  flyway:
-    enabled: true
-    baseline-on-migrate: true
-    locations: classpath:db/migration
-
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:15432/payment_db
-    username: payment_user
-    password: payment_pw
-
+    url: jdbc:postgresql://${RDS_ENDPOINT:localhost}:5432/payment_db
+    username: ${RDS_USERNAME:payment_user}
+    password: ${RDS_PASSWORD:payment_pw}
   jpa:
     hibernate:
       ddl-auto: none
 
 clients:
   order:
-    base-url: ${ORDER_BASE_URL:http://localhost:8083}
+    base-url: http://order-service:8083
 
 app:
   payment:
@@ -48,13 +46,13 @@ app:
       order-payment-saga: order.payment.saga.v1
       order-payment-saga-dlq: order.payment.saga.v1.dlq
     consumers:
-      order-payment-saga-enabled: false
+      order-payment-saga-enabled: true
       worker-id: ${HOSTNAME:payment-service}
       claim-timeout-seconds: 300
     producer:
-      relay-enabled: false
-      batch-size: 100
-      fixed-delay-ms: 3000
+      relay-enabled: true
+      batch-size: 20
+      fixed-delay-ms: 1000
       worker-id: ${HOSTNAME:payment-service}
       claim-timeout-seconds: 300
       max-retry-count: 5

@@ -35,6 +35,7 @@ public class SecurityConfig {
                         .pathMatchers(HttpMethod.OPTIONS, "/**").permitAll()
 
                         // 공개 API
+                        .pathMatchers("/health").permitAll()
                         .pathMatchers("/api/auth/**").permitAll()
                         .pathMatchers(HttpMethod.GET, "/api/products/**").permitAll()
                         .pathMatchers("/actuator/**", "/swagger-ui/**", "/v3/api-docs/**").permitAll()
