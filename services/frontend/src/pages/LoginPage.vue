@@ -44,9 +44,9 @@
               v-model="form.password"
               type="password"
               required
-              minlength="8"
+              minlength="4"
               autocomplete="current-password"
-              placeholder="8자 이상 비밀번호"
+              placeholder="4자 이상 비밀번호"
             >
           </label>
           <button

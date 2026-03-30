@@ -9,7 +9,7 @@
         <ul class="auth-highlights">
           <li>🧾 이메일·아이디 기반 안전한 계정 생성</li>
           <li>👤 Auth와 User Service 연동으로 프로필 저장</li>
-          <li>🔒 8자 이상 비밀번호 정책 적용</li>
+          <li>🔒 4자 이상 비밀번호 정책 적용</li>
         </ul>
       </div>
       -->
@@ -50,9 +50,9 @@
               v-model="form.password"
               type="password"
               required
-              minlength="8"
+              minlength="4"
               autocomplete="new-password"
-              placeholder="8자 이상 비밀번호"
+              placeholder="4자 이상 비밀번호"
             >
           </label>
           <div class="auth-field-grid">
