@@ -1,7 +1,7 @@
 spring:
   kafka:
     # Saga E2E runs against the local Kafka broker from docker-compose.
-    bootstrap-servers: localhost:19092
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:19092}
 
 decorator:
   datasource:

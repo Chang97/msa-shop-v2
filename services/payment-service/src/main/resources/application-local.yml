@@ -5,7 +5,7 @@ spring:
   application:
     name: payment-service
   kafka:
-    bootstrap-servers: localhost:19092
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:19092}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -25,7 +25,7 @@ spring:
 
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:15432/payment_db
+    url: ${PAYMENT_DB_URL:jdbc:postgresql://localhost:15432/payment_db}
     username: payment_user
     password: payment_pw
 

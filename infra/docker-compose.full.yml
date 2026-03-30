@@ -58,7 +58,15 @@ services:
         MODULE_DIR: services/gateway
     container_name: msashop-gateway
     environment:
-      SPRING_PROFILES_ACTIVE: local,docker
+      SPRING_PROFILES_ACTIVE: local
+      FRONTEND_ORIGIN: http://localhost:5173
+      AUTH_SERVICE_URI: http://auth-service:8081
+      PRODUCT_SERVICE_URI: http://product-service:8082
+      ORDER_SERVICE_URI: http://order-service:8083
+      PAYMENT_SERVICE_URI: http://payment-service:8084
+      USER_SERVICE_URI: http://user-service:8085
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     ports:
       - "8080:8080"
     depends_on:
@@ -74,8 +82,13 @@ services:
         MODULE_DIR: services/auth-service
     container_name: msashop-auth-service
     environment:
-      SPRING_PROFILES_ACTIVE: local,saga-e2e,docker
+      SPRING_PROFILES_ACTIVE: local,saga-e2e
       INTERNAL_SERVICE_SECRET: local-internal-secret
+      USER_SERVICE_BASE_URL: http://user-service:8085
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      AUTH_DB_URL: jdbc:postgresql://postgres:5432/auth_db
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     ports:
       - "8081:8081"
     depends_on:
@@ -95,8 +108,12 @@ services:
         MODULE_DIR: services/product-service
     container_name: msashop-product-service
     environment:
-      SPRING_PROFILES_ACTIVE: local,saga-e2e,docker
+      SPRING_PROFILES_ACTIVE: local,saga-e2e
       INTERNAL_SERVICE_SECRET: local-internal-secret
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      PRODUCT_DB_URL: jdbc:postgresql://postgres:5432/product_db
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     ports:
       - "8082:8082"
     depends_on:
@@ -116,8 +133,14 @@ services:
         MODULE_DIR: services/order-service
     container_name: msashop-order-service
     environment:
-      SPRING_PROFILES_ACTIVE: local,saga-e2e,docker
+      SPRING_PROFILES_ACTIVE: local,saga-e2e
       INTERNAL_SERVICE_SECRET: local-internal-secret
+      PRODUCT_BASE_URL: http://product-service:8082/internal/products
+      PAYMENT_BASE_URL: http://payment-service:8084
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      ORDER_DB_URL: jdbc:postgresql://postgres:5432/order_db
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     ports:
       - "8083:8083"
     depends_on:
@@ -137,8 +160,11 @@ services:
         MODULE_DIR: services/payment-service
     container_name: msashop-payment-service
     environment:
-      SPRING_PROFILES_ACTIVE: local,saga-e2e,docker
+      SPRING_PROFILES_ACTIVE: local,saga-e2e
       INTERNAL_SERVICE_SECRET: local-internal-secret
+      ORDER_BASE_URL: http://order-service:8083
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      PAYMENT_DB_URL: jdbc:postgresql://postgres:5432/payment_db
     ports:
       - "8084:8084"
     depends_on:
@@ -158,8 +184,13 @@ services:
         MODULE_DIR: services/user-service
     container_name: msashop-user-service
     environment:
-      SPRING_PROFILES_ACTIVE: local,saga-e2e,docker
+      SPRING_PROFILES_ACTIVE: local,saga-e2e
       INTERNAL_SERVICE_SECRET: local-internal-secret
+      AUTH_SERVICE_BASE_URL: http://auth-service:8081
+      KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+      USER_DB_URL: jdbc:postgresql://postgres:5432/user_db
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     ports:
       - "8085:8085"
     depends_on:

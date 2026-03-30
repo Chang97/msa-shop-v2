@@ -14,7 +14,7 @@ spring:
           '[/**]':
             # allowCredentials: true면 allowedOrigins에 * 못 씀
             allowed-origins:
-              - "http://localhost:5173"
+              - "${FRONTEND_ORIGIN:http://localhost:5173}"
             allowed-methods:
               - GET
               - POST
@@ -31,27 +31,27 @@ spring:
             max-age: 3600
       routes:
         - id: auth
-          uri: http://localhost:8081
+          uri: ${AUTH_SERVICE_URI:http://localhost:8081}
           predicates:
             - Path=/api/auth/**
 
         - id: product
-          uri: http://localhost:8082
+          uri: ${PRODUCT_SERVICE_URI:http://localhost:8082}
           predicates:
             - Path=/api/products/**
 
         - id: order
-          uri: http://localhost:8083
+          uri: ${ORDER_SERVICE_URI:http://localhost:8083}
           predicates:
             - Path=/api/orders/**
 
         - id: payment
-          uri: http://localhost:8084
+          uri: ${PAYMENT_SERVICE_URI:http://localhost:8084}
           predicates:
             - Path=/api/payments/**
 
         - id: user
-          uri: http://localhost:8085
+          uri: ${USER_SERVICE_URI:http://localhost:8085}
           predicates:
             - Path=/api/users/**
   security:
@@ -64,8 +64,8 @@ spring:
 #          issuer-uri: auth-service
   data:
     redis:
-      host: localhost                 # ?? redis host
-      port: 16379                      # ?? redis port
+      host: ${REDIS_HOST:localhost}                 # ?? redis host
+      port: ${REDIS_PORT:16379}                      # ?? redis port
 
 # 로깅
 logging:
@@ -73,4 +73,3 @@ logging:
     org.springframework.security: DEBUG
     org.springframework.cloud.gateway: DEBUG
     org.springframework.web.server.adapter.HttpWebHandlerAdapter: DEBUG
-

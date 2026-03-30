@@ -3,7 +3,7 @@ server:
 
 clients:
   auth-service:
-    base-url: http://localhost:8081
+    base-url: ${AUTH_SERVICE_BASE_URL:http://localhost:8081}
 spring:
   debug: true
   application:
@@ -13,7 +13,7 @@ spring:
     baseline-on-migrate: true
     locations: classpath:db/migration
   kafka:
-    bootstrap-servers: localhost:19092
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:19092}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -29,7 +29,7 @@ spring:
 
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:15432/user_db
+    url: ${USER_DB_URL:jdbc:postgresql://localhost:15432/user_db}
     username: user_user
     password: user_pw
     hikari:
@@ -38,8 +38,8 @@ spring:
 
   data:
     redis:
-      host: localhost
-      port: 16379
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:16379}
 
   jpa:
     hibernate:
@@ -74,7 +74,7 @@ security:
     secret: ${JWT_SECRET:local-dev-secret-change-me}  # (??? ??? ?? ???? ??)
   internal:
     header-name: X-Internal-Secret
-    service-secret: local-internal-secret
+    service-secret: ${INTERNAL_SERVICE_SECRET:local-internal-secret}
 
 logging:
   level:

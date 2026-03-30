@@ -6,7 +6,7 @@ spring:
   application:
     name: product-service
   kafka:
-    bootstrap-servers: localhost:19092
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:19092}
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
@@ -26,7 +26,7 @@ spring:
 
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:15432/product_db
+    url: ${PRODUCT_DB_URL:jdbc:postgresql://localhost:15432/product_db}
     username: product_user
     password: product_pw
     hikari:
@@ -35,8 +35,8 @@ spring:
 
   data:
     redis:
-      host: localhost
-      port: 16379
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:16379}
 
   jpa:
     hibernate:

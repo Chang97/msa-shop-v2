@@ -1,6 +1,6 @@
 spring:
   kafka:
-    bootstrap-servers: localhost:19092
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:19092}
 
 app:
   kafka:
