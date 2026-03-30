@@ -4,18 +4,14 @@ import com.msashop.user.adapter.out.persistence.entity.UserJpaEntity;
 import com.msashop.user.domain.model.User;
 
 /**
- * JPA Entity <-> Domain 매핑.
- *
- * - 조회(load) 시 entity -> domain
- * - 저장(save) 시 domain -> entity(기존 entity에 반영)
+ * Maps between JPA entities and the user domain aggregate.
  */
 public final class UserEntityMapper {
 
     private UserEntityMapper() {}
 
     /**
-     * Entity -> Domain (rehydrate)
-     * - 생성자 계약에 맞춰 "최소 상태"로 복원.
+     * Rehydrates the domain aggregate from the persistence entity.
      */
     public static User toDomain(UserJpaEntity e) {
         return new User(
@@ -26,13 +22,15 @@ public final class UserEntityMapper {
                 e.getPstnName(),
                 e.getTel(),
                 Boolean.TRUE.equals(e.getUseYn()),
+                e.getCreatedAt(),
+                e.getCreatedBy(),
                 e.getUpdatedAt(),
                 e.getUpdatedBy()
         );
     }
 
     /**
-     * Domain 상태를 기존 엔티티에 반영한다.
+     * Applies mutable domain state back to the existing entity.
      */
     public static void applyTo(User domain, UserJpaEntity entity) {
         entity.changeUseYn(domain.isUseYn());
@@ -42,4 +40,3 @@ public final class UserEntityMapper {
         entity.changeTel(domain.getTel());
     }
 }
-

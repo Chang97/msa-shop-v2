@@ -13,13 +13,20 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
-@EnableMethodSecurity // @PreAuthorize 사용
+@EnableMethodSecurity
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http,
-                                            GatewayAuthHeaderFilter gatewayAuthHeaderFilter,
-                                            InternalSecretFilter internalSecretFilter) throws Exception {
+    GatewayAuthHeaderFilter gatewayAuthHeaderFilter() {
+        return new GatewayAuthHeaderFilter();
+    }
+
+    @Bean
+    SecurityFilterChain securityFilterChain(
+            HttpSecurity http,
+            GatewayAuthHeaderFilter gatewayAuthHeaderFilter,
+            InternalSecretFilter internalSecretFilter
+    ) throws Exception {
         TraceIdFilter traceIdFilter = new TraceIdFilter();
 
         return http
@@ -27,8 +34,6 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
-
-                // 필요 시 actuator 허용
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/error").permitAll()
@@ -37,12 +42,9 @@ public class SecurityConfig {
                         .requestMatchers("/internal/**").permitAll()
                         .anyRequest().authenticated()
                 )
-
-                // 헤더 기반 인증 필터 주입 (인증 필터보다 앞에 두는게 안전)
-                .addFilterBefore(traceIdFilter, GatewayAuthHeaderFilter.class)
-                .addFilterBefore(gatewayAuthHeaderFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(internalSecretFilter, GatewayAuthHeaderFilter.class)
-
+                .addFilterBefore(traceIdFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(internalSecretFilter, TraceIdFilter.class)
+                .addFilterAfter(gatewayAuthHeaderFilter, InternalSecretFilter.class)
                 .build();
     }
 }

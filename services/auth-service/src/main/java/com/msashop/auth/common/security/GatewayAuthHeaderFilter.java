@@ -1,4 +1,4 @@
-package com.msashop.payment.common.security;
+package com.msashop.auth.common.security;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -36,12 +36,16 @@ public class GatewayAuthHeaderFilter extends OncePerRequestFilter {
         String userId = request.getHeader("X-User-Id");
         String rolesHeader = request.getHeader("X-Roles");
 
-        log.debug("[PS] userId : {}, roles: {}", userId, rolesHeader);
+        log.debug("[auth] userId={}, roles={}", userId, rolesHeader);
 
         if (SecurityContextHolder.getContext().getAuthentication() == null) {
             if (userId != null && !userId.isBlank()) {
                 List<SimpleGrantedAuthority> authorities = parseAuthorities(rolesHeader);
-                var auth = new GatewayAuthenticationToken(userId, authorities);
+                var principal = new CurrentUser(
+                        Long.parseLong(userId.trim()),
+                        authorities.stream().map(SimpleGrantedAuthority::getAuthority).collect(Collectors.toSet())
+                );
+                var auth = new GatewayAuthenticationToken(principal, authorities);
                 SecurityContextHolder.getContext().setAuthentication(auth);
             }
         }

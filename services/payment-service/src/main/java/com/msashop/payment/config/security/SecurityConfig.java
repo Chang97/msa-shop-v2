@@ -17,7 +17,13 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http, GatewayAuthHeaderFilter gatewayAuthHeaderFilter) throws Exception {
+    GatewayAuthHeaderFilter gatewayAuthHeaderFilter() {
+        return new GatewayAuthHeaderFilter();
+    }
+
+    @Bean
+    SecurityFilterChain securityFilterChain(HttpSecurity http, GatewayAuthHeaderFilter gatewayAuthHeaderFilter)
+            throws Exception {
         TraceIdFilter traceIdFilter = new TraceIdFilter();
 
         return http
@@ -25,17 +31,14 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .formLogin(AbstractHttpConfigurer::disable)
                 .httpBasic(AbstractHttpConfigurer::disable)
-
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/error").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                         .anyRequest().authenticated()
                 )
-
-                .addFilterBefore(traceIdFilter, GatewayAuthHeaderFilter.class)
-                .addFilterBefore(gatewayAuthHeaderFilter, UsernamePasswordAuthenticationFilter.class)
-
+                .addFilterBefore(traceIdFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(gatewayAuthHeaderFilter, TraceIdFilter.class)
                 .build();
     }
 }

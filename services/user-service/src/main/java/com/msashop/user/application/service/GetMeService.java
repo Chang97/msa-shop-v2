@@ -2,39 +2,44 @@ package com.msashop.user.application.service;
 
 import com.msashop.common.web.exception.BusinessException;
 import com.msashop.common.web.exception.UserErrorCode;
-import com.msashop.user.application.mapper.UserQueryMapper;
 import com.msashop.user.application.port.in.GetMeUseCase;
 import com.msashop.user.application.port.in.model.UserResult;
-import com.msashop.user.application.port.out.LoadUserWithRolesPort;
-import com.msashop.user.application.port.out.model.UserRow;
+import com.msashop.user.application.port.out.LoadUserPort;
+import com.msashop.user.domain.model.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-
 /**
- * Query 유스케이스 서비스.
- *
- * 역할:
- * - Repo에서 조인 Row List를 받는다.
- * - Row List를 집계해 UserResult 1건으로 만든다.
+ * Reads the current user's profile and converts it to an application result model.
  */
 @Service
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
 public class GetMeService implements GetMeUseCase {
 
-    private final LoadUserWithRolesPort loadUserWithRolesPort;
+    private final LoadUserPort loadUserPort;
 
     /**
-     * 내 정보 조회 (/me).
+     * Loads the current user by auth user id and maps it to the response model.
      */
     @Override
     public UserResult getMe(Long userId) {
-        UserRow row = loadUserWithRolesPort.findByAuthUserId(userId)
+        User user = loadUserPort.findByAuthUserId(userId)
                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
 
-        return UserQueryMapper.toResult(row);
+        return new UserResult(
+                user.getUserId(),
+                user.getAuthUserId(),
+                user.getUserName(),
+                user.getEmpNo(),
+                user.getPstnName(),
+                user.getTel(),
+                user.isUseYn(),
+                user.getCreatedAt(),
+                user.getCreatedBy(),
+                user.getUpdatedAt(),
+                user.getUpdatedBy()
+        );
     }
 }

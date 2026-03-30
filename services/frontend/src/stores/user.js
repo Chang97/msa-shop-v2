@@ -302,7 +302,10 @@ export const useUserStore = defineStore(
     const setSession = async (payload = {}, options = {}) => {
       const { fallbackLoginId = '', fallbackUserId = null, preserveExistingUser = false, user: forcedUser } = options;
 
-      const sessionUser = payload.user ?? forcedUser;
+      const sessionUser =
+        payload.user ??
+        forcedUser ??
+        (payload.userId !== undefined || payload.authUserId !== undefined ? payload : null);
       if (sessionUser) {
         applyUserSnapshot(sessionUser);
       } else if (!preserveExistingUser) {
@@ -405,7 +408,7 @@ export const useUserStore = defineStore(
       loading.value = true;
       try {
         const { data } = await http.post('/auth/login', payload);
-        await setSession(data);
+        await setSession(data, { fallbackLoginId: payload.loginId });
         return data;
       } catch (error) {
         throw toError(error);

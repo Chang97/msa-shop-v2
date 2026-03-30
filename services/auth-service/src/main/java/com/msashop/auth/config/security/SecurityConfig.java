@@ -1,5 +1,6 @@
 package com.msashop.auth.config.security;
 
+import com.msashop.auth.common.security.GatewayAuthHeaderFilter;
 import com.msashop.common.web.filter.TraceIdFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,7 +15,16 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     @Bean
-    SecurityFilterChain securityFilterChain(HttpSecurity http, InternalSecretFilter internalSecretFilter) throws Exception {
+    GatewayAuthHeaderFilter gatewayAuthHeaderFilter() {
+        return new GatewayAuthHeaderFilter();
+    }
+
+    @Bean
+    SecurityFilterChain securityFilterChain(
+            HttpSecurity http,
+            InternalSecretFilter internalSecretFilter,
+            GatewayAuthHeaderFilter gatewayAuthHeaderFilter
+    ) throws Exception {
         TraceIdFilter traceIdFilter = new TraceIdFilter();
 
         return http
@@ -37,15 +47,17 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/auth/refresh").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/logout").permitAll()
                         .requestMatchers(HttpMethod.POST, "/api/auth/register").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/auth/me").authenticated()
                         // internal endpoints are protected by InternalSecretFilter
                         .requestMatchers("/internal/**").permitAll()
                         .requestMatchers("/actuator/health", "/actuator/info").permitAll()
                         .anyRequest().denyAll()
                 )
 
-                .addFilterBefore(traceIdFilter, InternalSecretFilter.class)
+                .addFilterBefore(traceIdFilter, UsernamePasswordAuthenticationFilter.class)
                 // protect /internal/** with secret header
-                .addFilterBefore(internalSecretFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(internalSecretFilter, TraceIdFilter.class)
+                .addFilterAfter(gatewayAuthHeaderFilter, InternalSecretFilter.class)
 
                 .build();
     }
