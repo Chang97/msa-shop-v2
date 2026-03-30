@@ -34,6 +34,15 @@ public class UserPersistenceAdapter implements LoadUserPort, CredentialPort, Use
     }
 
     @Override
+    public Optional<AuthUserRecord> findByUserId(Long userId) {
+        return credentialRepo.findById(userId)
+                .map(e -> AuthUserCredentialMapper.toAuthRecord(
+                        e,
+                        userRoleMapRepo.findRoleNamesByUserId(e.getUserId())
+                ));
+    }
+
+    @Override
     public boolean existsByEmail(String email) {
         return credentialRepo.existsByEmail(email);
     }

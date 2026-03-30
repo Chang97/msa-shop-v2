@@ -10,31 +10,24 @@ import com.msashop.auth.application.service.token.RefreshTokenGenerator;
 import com.msashop.auth.application.service.token.TokenHasher;
 import com.msashop.auth.application.service.token.TokenIssuer;
 import com.msashop.auth.config.auth.RefreshTokenProperties;
-import com.msashop.auth.config.jwt.JwtProperties;
 import com.msashop.common.web.exception.AuthErrorCode;
 import com.msashop.common.web.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
-import java.util.logging.Logger;
 import java.util.List;
 
 /**
- * 濡쒓렇???좎뒪耳?댁뒪 援ы쁽泥?
+ * 로그인 요청을 처리하고 access token, refresh token을 발급하는 서비스다.
  *
- * 梨낆엫:
- * 1) ?ъ슜??議고쉶
- * 2) 鍮꾨?踰덊샇 寃利?Argon2)
- * 3) Access Token 諛쒓툒
- * 4) Refresh Token 諛쒓툒 + DB ????댁떆留?
- *
- * 李멸퀬:
- * - Refresh rotate / logout revoke??蹂꾨룄 ?좎뒪耳?댁뒪濡?遺꾨━(RefreshService/LogoutService)
+ * 처리 흐름:
+ * 1. 로그인 아이디로 사용자를 조회한다.
+ * 2. 사용자 활성 여부와 비밀번호를 검증한다.
+ * 3. access token을 발급한다.
+ * 4. refresh token을 생성하고 해시값을 저장한다.
  */
 @Service
 @RequiredArgsConstructor
@@ -51,42 +44,40 @@ public class LoginService implements LoginUseCase {
     @Transactional
     @Override
     public LoginResult login(LoginCommand command) {
-        // 1) ?ъ슜??議고쉶
+        // 로그인 아이디로 인증 대상 사용자를 조회한다.
         AuthUserRecord user = loadUserPort.findByLoginId(command.loginId())
                 .orElseThrow(() -> new BusinessException(AuthErrorCode.AUTH_INVALID_CREDENTIALS));
-        // 2) ?쒖꽦 ?ъ슜???щ?(use_yn) 泥댄겕
+
+        // 비활성 사용자면 로그인할 수 없다.
         if (Boolean.FALSE.equals(user.enabled())) {
             throw new BusinessException(AuthErrorCode.AUTH_DISABLED_USER);
         }
 
-        // 3) 鍮꾨?踰덊샇 寃利?Argon2 ?댁떆 鍮꾧탳)
+        // 입력한 비밀번호와 저장된 비밀번호 해시가 일치하는지 검증한다.
         boolean matches = passwordEncoder.matches(command.password(), user.passwordHash());
         if (!matches) {
-            // TODO: ?ㅽ뙣 移댁슫??利앷?(user_password_fail_cnt) ?깆? ?ㅼ쓬 ?④퀎?먯꽌 ?몃옖??뀡?쇰줈
-            throw new BusinessException(AuthErrorCode.AUTH_NOT_MATCHED_PASSWORD);
+            // TODO: 추후 로그인 실패 횟수 누적과 계정 잠금 정책을 붙일 수 있다.
+            throw new BusinessException(AuthErrorCode.AUTH_INVALID_CREDENTIALS);
         }
 
-        // 4) Access Token 諛쒓툒 (roles??1李⑤뒗 怨좎젙, ?댄썑 user_role_map 議곗씤?쇰줈 ?뺤옣)
+        // 사용자 권한 목록을 access token claim에 담는다.
         List<String> roles = user.roles() == null ? List.of() : user.roles();
         String accessToken = tokenIssuer.issueAccessToken(user.userId(), roles);
 
-        // 5) Refresh Token ?먮Ц ?앹꽦(?대씪?댁뼵???꾨떖??
+        // refresh token 원문과 저장용 해시를 만든다.
         var generated = refreshTokenGenerator.generate();
-
-        // 6) DB ??μ슜(NewRefreshToken) 議곕┰: hash 怨꾩궛 + 留뚮즺(expiresAt) ?곗텧
         String refreshRaw = generated.rawToken();
         String refreshHash = tokenHasher.sha256Hex(refreshRaw);
         Instant now = Instant.now();
         Instant expiresAt = now.plusSeconds(refreshProps.ttlSeconds());
 
-        // 7) DB ??? raw????ν븯吏 ?딄퀬, hash留????
+        // DB에는 refresh token 원문이 아니라 해시와 만료 시각만 저장한다.
         refreshTokenPort.save(new RefreshTokenPort.NewRefreshToken(
                 refreshHash,
                 user.userId(),
                 expiresAt
         ));
-        // 8) ?묐떟: access + refresh(raw)
+
         return new LoginResult(accessToken, refreshRaw);
     }
 }
-

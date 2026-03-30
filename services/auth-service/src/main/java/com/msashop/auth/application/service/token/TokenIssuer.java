@@ -1,24 +1,21 @@
 package com.msashop.auth.application.service.token;
 
 import com.msashop.auth.config.jwt.JwtProperties;
-import java.time.Instant;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.oauth2.jose.jws.SignatureAlgorithm;
-import org.springframework.security.oauth2.jwt.*;
+import org.springframework.security.oauth2.jwt.JwtClaimsSet;
+import org.springframework.security.oauth2.jwt.JwtEncoder;
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
+import org.springframework.security.oauth2.jwt.JwsHeader;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
+import java.util.List;
+
 /**
- * RS256 湲곕컲 JWT Access Token 諛쒓툒 援ы쁽泥?
+ * RS256 서명 방식으로 JWT access token을 발급하는 컴포넌트다.
  *
- * ?숈옉:
- * - JwtClaimsSet ?앹꽦 (iss, iat, exp, sub, roles)
- * - JwsHeader(alg=RS256) 吏??
- * - JwtEncoder(Nimbus)濡??쒕챸?섏뿬 JWT 臾몄옄???앹꽦
- *
- * 二쇱쓽:
- * - ???대옒?ㅻ뒗 "諛쒓툒"留??대떦 (寃利앹? Gateway ResourceServer媛 ?대떦)
- * - 誘쇨컧?뺣낫(?대찓???대쫫 ?????좏겙???ｌ? ?딆쓬
+ * access token에는 issuer, 발급 시각, 만료 시각, 사용자 식별자, 권한 목록을 담는다.
  */
 @Component
 @RequiredArgsConstructor
@@ -47,4 +44,3 @@ public class TokenIssuer {
                 .getTokenValue();
     }
 }
-

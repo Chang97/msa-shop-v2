@@ -4,19 +4,12 @@ import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 
 /**
- * ?좏겙 ?먮Ц(raw)???덉쟾?섍쾶 ??ν븯湲??꾪빐 ?댁떆濡?蹂?섑븯??而댄룷?뚰듃.
+ * refresh token 원문을 저장용 SHA-256 해시 문자열로 변환하는 컴포넌트다.
  *
- * 1李⑥뿉?쒕뒗 SHA-256(hex)???ъ슜:
- * - ???媛?湲몄씠: 64 chars (hex)
- * - token_hash 而щ읆 湲몄씠(512)??異⑸텇???ㅼ뼱媛?
- *
- * 李멸퀬:
- * - ?댁쁺?먯꽌??HMAC(SHA-256 + ?쒕쾭 ?쒗겕由?濡?留뚮뱾硫?"DB ?좎텧 ???ㅽ봽?쇱씤 ???怨듦꺽"????以꾩씪 ???덉쓬
- * - 濡쒖뺄 ?④퀎?먯꽌??SHA-256留뚯쑝濡쒕룄 ?ㅺ퀎 ?섎룄 ?꾨떖 媛??
+ * DB에는 refresh token 원문을 직접 저장하지 않고 해시값만 저장해 유출 시 영향을 줄인다.
  */
 @Component
 public class TokenHasher {
@@ -33,4 +26,3 @@ public class TokenHasher {
         }
     }
 }
-

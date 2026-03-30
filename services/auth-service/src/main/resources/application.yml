@@ -86,12 +86,6 @@ security:
   internal:
     header-name: X-Internal-Secret
     service-secret: ${INTERNAL_SERVICE_SECRET:local-internal-secret}
-  service-accounts:
-    accounts:
-      - client-id: order-service
-        client-secret: ${ORDER_SERVICE_CLIENT_SECRET:local-order-service-secret}
-        permissions:
-          - PRODUCT_UPDATE
   jwt:
     issuer: auth-service
     access-token-ttl-seconds: 1800

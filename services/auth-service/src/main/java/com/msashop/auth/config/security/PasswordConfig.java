@@ -10,7 +10,6 @@ public class PasswordConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        // 湲곕낯 ?뚮씪誘명꽣(媛쒕컻 ?④퀎): ?꾩슂?섎㈃ ?쒕떇
         return Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8();
     }
 }

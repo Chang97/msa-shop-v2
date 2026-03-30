@@ -11,7 +11,8 @@ public enum AuthErrorCode implements ErrorCode {
     AUTH_REFRESH_EXPIRED("AUTH_011", 401, "리프레시 토큰이 만료되었습니다."),
     AUTH_REFRESH_REVOKED("AUTH_012", 401, "리프레시 토큰이 폐기되었습니다."),
     AUTH_REFRESH_REPLAY("AUTH_013", 409, "이미 사용된 리프레시 토큰입니다."),
-    AUTH_REFRESH_INVALID_FORMAT("AUTH_014", 401, "리프레시 토큰 형식이 올바르지 않습니다.");
+    AUTH_REFRESH_INVALID_FORMAT("AUTH_014", 401, "리프레시 토큰 형식이 올바르지 않습니다."),
+    AUTH_REFRESH_INVALID("AUTH_014", 401, "유효하지 않은 리프레시 토큰입니다.");
 
     private final String code;
     private final int status;
