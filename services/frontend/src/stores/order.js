@@ -73,10 +73,9 @@ export const useOrderStore = defineStore('orders', {
         const key = idempotencyKey || (typeof crypto?.randomUUID === 'function'
           ? `PAY-${orderId}-${crypto.randomUUID()}`
           : `PAY-${orderId}-${Date.now()}-${Math.random().toString(16).slice(2)}`);
-        const { data } = await http.post('/payments/approve', {
-          orderId: Number(orderId),
-          amount,
-          idempotencyKey: key
+        const { data } = await http.post(`/orders/${Number(orderId)}/pay`, {
+          idempotencyKey: key,
+          provider: 'FAKE'
         });
         if (this.current && this.current.orderId === Number(orderId)) {
           this.current.status = data?.status || this.current.status;
