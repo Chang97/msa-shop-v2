@@ -1,9 +1,9 @@
 package com.msashop.auth.config.security;
 
+import com.msashop.common.web.filter.TraceIdFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -15,6 +15,8 @@ public class SecurityConfig {
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, InternalSecretFilter internalSecretFilter) throws Exception {
+        TraceIdFilter traceIdFilter = new TraceIdFilter();
+
         return http
                 // stateless
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -41,6 +43,7 @@ public class SecurityConfig {
                         .anyRequest().denyAll()
                 )
 
+                .addFilterBefore(traceIdFilter, InternalSecretFilter.class)
                 // protect /internal/** with secret header
                 .addFilterBefore(internalSecretFilter, UsernamePasswordAuthenticationFilter.class)
 

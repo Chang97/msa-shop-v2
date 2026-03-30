@@ -4,14 +4,14 @@ import com.msashop.common.web.exception.ErrorCode;
 
 public enum AuthErrorCode implements ErrorCode {
 
-    AUTH_INVALID_CREDENTIALS("AUTH_001", 401, "Invalid credentials."),
-    AUTH_DISABLED_USER("AUTH_002", 401, "User is disabled"),
-    AUTH_NOT_MATCHED_PASSWORD("AUTH_002", 401, "User Password not matched"),
-    AUTH_REFRESH_MISSING("AUTH_010", 401, "Refresh token is missing."),
-    AUTH_REFRESH_EXPIRED("AUTH_011", 401, "Refresh token expired."),
-    AUTH_REFRESH_REVOKED("AUTH_012", 401, "Refresh token revoked."),
-    AUTH_REFRESH_REPLAY("AUTH_013", 409, "Refresh token already used (replay suspected)."),
-    AUTH_REFRESH_INVALID_FORMAT("AUTH_014", 401, "Invalid refresh token format");
+    AUTH_INVALID_CREDENTIALS("AUTH_001", 401, "아이디 또는 비밀번호가 올바르지 않습니다."),
+    AUTH_DISABLED_USER("AUTH_002", 401, "비활성화된 사용자입니다."),
+    AUTH_NOT_MATCHED_PASSWORD("AUTH_003", 401, "비밀번호가 일치하지 않습니다."),
+    AUTH_REFRESH_MISSING("AUTH_010", 401, "리프레시 토큰이 없습니다."),
+    AUTH_REFRESH_EXPIRED("AUTH_011", 401, "리프레시 토큰이 만료되었습니다."),
+    AUTH_REFRESH_REVOKED("AUTH_012", 401, "리프레시 토큰이 폐기되었습니다."),
+    AUTH_REFRESH_REPLAY("AUTH_013", 409, "이미 사용된 리프레시 토큰입니다."),
+    AUTH_REFRESH_INVALID_FORMAT("AUTH_014", 401, "리프레시 토큰 형식이 올바르지 않습니다.");
 
     private final String code;
     private final int status;

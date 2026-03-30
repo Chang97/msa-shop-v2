@@ -1,7 +1,7 @@
 package com.msashop.product.config.security;
 
+import com.msashop.common.web.filter.TraceIdFilter;
 import com.msashop.product.common.security.GatewayAuthHeaderFilter;
-import com.msashop.product.config.security.InternalSecretFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -20,6 +20,8 @@ public class SecurityConfig {
     SecurityFilterChain securityFilterChain(HttpSecurity http,
                                             GatewayAuthHeaderFilter gatewayAuthHeaderFilter,
                                             InternalSecretFilter internalSecretFilter) throws Exception {
+        TraceIdFilter traceIdFilter = new TraceIdFilter();
+
         return http
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .csrf(AbstractHttpConfigurer::disable)
@@ -37,8 +39,9 @@ public class SecurityConfig {
                 )
 
                 // 헤더 기반 인증 필터 주입 (인증 필터보다 앞에 두는게 안전)
+                .addFilterBefore(traceIdFilter, GatewayAuthHeaderFilter.class)
                 .addFilterBefore(gatewayAuthHeaderFilter, UsernamePasswordAuthenticationFilter.class)
-                .addFilterBefore(internalSecretFilter, UsernamePasswordAuthenticationFilter.class)
+                .addFilterBefore(internalSecretFilter, GatewayAuthHeaderFilter.class)
 
                 .build();
     }

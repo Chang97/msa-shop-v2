@@ -10,7 +10,7 @@ import com.msashop.auth.application.service.token.TokenHasher;
 import com.msashop.auth.application.service.token.TokenIssuer;
 import com.msashop.auth.config.auth.RefreshTokenProperties;
 import com.msashop.common.web.exception.AuthErrorCode;
-import com.msashop.common.web.exception.UnauthorizedException;
+import com.msashop.common.web.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,19 +42,19 @@ public class RefreshService implements RefreshUseCase {
         if (storedActive.isEmpty()) {
             var storedAny = refreshTokenPort.findByTokenHash(tokenHash);
             if (storedAny.isEmpty()) {
-                throw new UnauthorizedException(AuthErrorCode.AUTH_INVALID_CREDENTIALS);
+                throw new BusinessException(AuthErrorCode.AUTH_INVALID_CREDENTIALS);
             }
 
             var t = storedAny.get();
             if (!t.expiresAt().isAfter(now)) {
-                throw new UnauthorizedException(AuthErrorCode.AUTH_REFRESH_EXPIRED);
+                throw new BusinessException(AuthErrorCode.AUTH_REFRESH_EXPIRED);
             }
 
             if (Boolean.TRUE.equals(t.revoked())) {
-                throw new UnauthorizedException(AuthErrorCode.AUTH_REFRESH_REVOKED);
+                throw new BusinessException(AuthErrorCode.AUTH_REFRESH_REVOKED);
             }
 
-            throw new UnauthorizedException(AuthErrorCode.AUTH_INVALID_CREDENTIALS);
+            throw new BusinessException(AuthErrorCode.AUTH_INVALID_CREDENTIALS);
         }
 
         var stored = storedActive.get();

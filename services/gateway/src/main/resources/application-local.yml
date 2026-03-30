@@ -26,6 +26,7 @@ spring:
               - "*"
             exposed-headers:
               - "Set-Cookie"
+              - "X-Trace-Id"
             allow-credentials: true
             max-age: 3600
       routes:
@@ -72,5 +73,4 @@ logging:
     org.springframework.security: DEBUG
     org.springframework.cloud.gateway: DEBUG
     org.springframework.web.server.adapter.HttpWebHandlerAdapter: DEBUG
-
 

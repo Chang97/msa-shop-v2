@@ -129,7 +129,7 @@ public class PaymentResultSagaService implements HandlePaymentResultUseCase {
             processedEventPort.markProcessed(consumerGroup, envelope.eventId(), Instant.now());
             throw new InvalidSagaMessageException(
                     "PAYMENT_APPROVED_PAYLOAD_DESERIALIZATION_FAILED",
-                    "PaymentApproved payload deserialization failed.",
+                    "PaymentApproved payload 역직렬화에 실패했습니다.",
                     e
             );
         }
@@ -142,7 +142,7 @@ public class PaymentResultSagaService implements HandlePaymentResultUseCase {
             processedEventPort.markProcessed(consumerGroup, envelope.eventId(), Instant.now());
             throw new InvalidSagaMessageException(
                     "PAYMENT_FAILED_PAYLOAD_DESERIALIZATION_FAILED",
-                    "PaymentFailed payload deserialization failed.",
+                    "PaymentFailed payload 역직렬화에 실패했습니다.",
                     e
             );
         }
@@ -155,7 +155,7 @@ public class PaymentResultSagaService implements HandlePaymentResultUseCase {
             processedEventPort.markProcessed(consumerGroup, envelope.eventId(), Instant.now());
             throw new InvalidSagaMessageException(
                     "STOCK_RESERVATION_FAILED_PAYLOAD_DESERIALIZATION_FAILED",
-                    "StockReservationFailed payload deserialization failed.",
+                    "StockReservationFailed payload 역직렬화에 실패했습니다.",
                     e
             );
         }

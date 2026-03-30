@@ -86,14 +86,14 @@ public class Product {
 
     public void increaseStock(int amount) {
         if (amount < 0) {
-            throw new IllegalArgumentException("amount must be positive");
+            throw new IllegalArgumentException("수량은 0 이상이어야 합니다.");
         }
         this.stock = requireNonNegative((long) this.stock + amount, "stock");
     }
 
     public void decreaseStock(int amount) {
         if (amount < 0) {
-            throw new IllegalArgumentException("amount must be positive");
+            throw new IllegalArgumentException("수량은 0 이상이어야 합니다.");
         }
         this.stock = requireNonNegative(this.stock - amount, "stock");
     }
@@ -101,17 +101,17 @@ public class Product {
     private BigDecimal requireNonNegative(BigDecimal value, String field) {
         Objects.requireNonNull(value, field);
         if (value.compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException(field + " must be >= 0");
+            throw new IllegalArgumentException(field + " 값은 0 이상이어야 합니다.");
         }
         return value;
     }
 
     private int requireNonNegative(long value, String field) {
         if (value < 0) {
-            throw new IllegalArgumentException(field + " must be >= 0");
+            throw new IllegalArgumentException(field + " 값은 0 이상이어야 합니다.");
         }
         if (value > Integer.MAX_VALUE) {
-            throw new IllegalArgumentException(field + " is too large");
+            throw new IllegalArgumentException(field + " 값이 너무 큽니다.");
         }
         return (int) value;
     }

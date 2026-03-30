@@ -12,7 +12,7 @@ import com.msashop.auth.application.service.token.TokenIssuer;
 import com.msashop.auth.config.auth.RefreshTokenProperties;
 import com.msashop.auth.config.jwt.JwtProperties;
 import com.msashop.common.web.exception.AuthErrorCode;
-import com.msashop.common.web.exception.UnauthorizedException;
+import com.msashop.common.web.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -53,17 +53,17 @@ public class LoginService implements LoginUseCase {
     public LoginResult login(LoginCommand command) {
         // 1) ?ъ슜??議고쉶
         AuthUserRecord user = loadUserPort.findByLoginId(command.loginId())
-                .orElseThrow(() -> new UnauthorizedException(AuthErrorCode.AUTH_INVALID_CREDENTIALS));
+                .orElseThrow(() -> new BusinessException(AuthErrorCode.AUTH_INVALID_CREDENTIALS));
         // 2) ?쒖꽦 ?ъ슜???щ?(use_yn) 泥댄겕
         if (Boolean.FALSE.equals(user.enabled())) {
-            throw new UnauthorizedException(AuthErrorCode.AUTH_DISABLED_USER);
+            throw new BusinessException(AuthErrorCode.AUTH_DISABLED_USER);
         }
 
         // 3) 鍮꾨?踰덊샇 寃利?Argon2 ?댁떆 鍮꾧탳)
         boolean matches = passwordEncoder.matches(command.password(), user.passwordHash());
         if (!matches) {
             // TODO: ?ㅽ뙣 移댁슫??利앷?(user_password_fail_cnt) ?깆? ?ㅼ쓬 ?④퀎?먯꽌 ?몃옖??뀡?쇰줈
-            throw new UnauthorizedException(AuthErrorCode.AUTH_NOT_MATCHED_PASSWORD);
+            throw new BusinessException(AuthErrorCode.AUTH_NOT_MATCHED_PASSWORD);
         }
 
         // 4) Access Token 諛쒓툒 (roles??1李⑤뒗 怨좎젙, ?댄썑 user_role_map 議곗씤?쇰줈 ?뺤옣)

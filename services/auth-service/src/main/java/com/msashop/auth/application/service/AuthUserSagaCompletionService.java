@@ -69,7 +69,7 @@ public class AuthUserSagaCompletionService implements HandleAuthUserSagaCompleti
             processedEventPort.markProcessed(consumerGroup, envelope.eventId(), Instant.now());
             throw new InvalidSagaMessageException(
                     "USER_PROFILE_CREATED_PAYLOAD_DESERIALIZATION_FAILED",
-                    "UserProfileCreated payload deserialization failed.",
+                    "UserProfileCreated payload 역직렬화에 실패했습니다.",
                     e
             );
         }

@@ -91,7 +91,7 @@ public class AuthUserCreatedSagaService implements HandleAuthUserCreatedSagaUseC
             processedEventPort.markProcessed(consumerGroup, envelope.eventId(), Instant.now());
             throw new InvalidSagaMessageException(
                     "AUTH_USER_CREATED_PAYLOAD_DESERIALIZATION_FAILED",
-                    "AuthUserCreated payload deserialization failed.",
+                    "AuthUserCreated payload 역직렬화에 실패했습니다.",
                     e
             );
         }

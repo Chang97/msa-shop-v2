@@ -1,6 +1,6 @@
 package com.msashop.user.adapter.in.web;
 
-import com.msashop.common.web.exception.UnauthorizedException;
+import com.msashop.common.web.exception.BusinessException;
 import com.msashop.common.web.exception.UserErrorCode;
 import com.msashop.user.adapter.in.web.dto.UserMeUpdateRequest;
 import com.msashop.user.adapter.in.web.mapper.UserWebCommandMapper;
@@ -35,7 +35,7 @@ public class UserCommandController {
     @PatchMapping("/me/deactivate")
     public ResponseEntity<Void> deactivateMe(@AuthenticationPrincipal CurrentUser currentUser) {
         if (currentUser == null || currentUser.userId() == null) {
-            throw new UnauthorizedException(UserErrorCode.USER_CURRENT_MISSING);
+            throw new BusinessException(UserErrorCode.USER_CURRENT_MISSING);
         }
 
         deactivateMeUseCase.deactivateMe(currentUser.userId());
@@ -48,7 +48,7 @@ public class UserCommandController {
             @Valid @RequestBody UserMeUpdateRequest request
             ) {
         if (currentUser == null || currentUser.userId() == null) {
-            throw new UnauthorizedException(UserErrorCode.USER_CURRENT_MISSING);
+            throw new BusinessException(UserErrorCode.USER_CURRENT_MISSING);
         }
 
         updateMeUseCase.updateMe(

@@ -1,8 +1,7 @@
 package com.msashop.user.application.service;
 
+import com.msashop.common.web.exception.BusinessException;
 import com.msashop.common.web.exception.CommonErrorCode;
-import com.msashop.common.web.exception.ConflictException;
-import com.msashop.common.web.exception.NotFoundException;
 import com.msashop.user.application.port.in.UpdateMeUseCase;
 import com.msashop.user.application.port.in.model.UpdateMeCommand;
 import com.msashop.user.application.port.out.LoadUserPort;
@@ -26,15 +25,15 @@ public class UpdateMeService implements UpdateMeUseCase {
     @Transactional
     public void updateMe(Long userId, UpdateMeCommand command) {
         User user = loadUserPort.findByAuthUserId(userId)
-                .orElseThrow(() -> new NotFoundException(
-                        CommonErrorCode.COMMON_NOT_FOUND, "User not found. userId = " + userId
+                .orElseThrow(() -> new BusinessException(
+                        CommonErrorCode.COMMON_NOT_FOUND, "사용자를 찾을 수 없습니다. userId = " + userId
                 ));
 
         // 이미 비활성화 계정은 수정 불가(정책)
         if (!user.isUseYn()) {
-            throw new ConflictException(
+            throw new BusinessException(
                     CommonErrorCode.COMMON_CONFLICT,
-                    "Deactivated user cannot be updated. userId=" + userId
+                    "비활성화된 사용자는 수정할 수 없습니다. userId=" + userId
             );
         }
 

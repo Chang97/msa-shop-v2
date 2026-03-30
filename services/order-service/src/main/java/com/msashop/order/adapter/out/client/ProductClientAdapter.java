@@ -1,7 +1,7 @@
 package com.msashop.order.adapter.out.client;
 
+import com.msashop.common.web.exception.BusinessException;
 import com.msashop.common.web.exception.CommonErrorCode;
-import com.msashop.common.web.exception.NotFoundException;
 import com.msashop.order.application.port.out.LoadProductPort;
 import com.msashop.order.application.port.out.model.ProductRow;
 import java.util.List;
@@ -50,11 +50,11 @@ public class ProductClientAdapter implements LoadProductPort {
                     .bodyToMono(ProductResponse.class)
                     .block();
             if (res == null) {
-                throw new NotFoundException(CommonErrorCode.COMMON_NOT_FOUND, "product not found. productId: " + productId);
+                throw new BusinessException(CommonErrorCode.COMMON_NOT_FOUND, "상품을 찾을 수 없습니다. productId: " + productId);
             }
             return new ProductRow(res.productId(), res.productName(), res.price(), res.stock(), res.status(), res.useYn());
         } catch (WebClientResponseException.NotFound e) {
-            throw new NotFoundException(CommonErrorCode.COMMON_NOT_FOUND, "product not found. productId: " + productId);
+            throw new BusinessException(CommonErrorCode.COMMON_NOT_FOUND, "상품을 찾을 수 없습니다. productId: " + productId);
         }
     }
 

@@ -13,8 +13,8 @@ import com.msashop.order.application.port.out.SaveOrderPort;
 import com.msashop.order.application.port.out.SaveOrderStatusHistoryPort;
 import com.msashop.order.domain.model.Order;
 import com.msashop.order.domain.model.OrderStatus;
+import com.msashop.common.web.exception.BusinessException;
 import com.msashop.common.web.exception.CommonErrorCode;
-import com.msashop.common.web.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -42,7 +42,7 @@ public class OrderPersistenceAdapter implements SaveOrderPort, LoadOrderPort, Or
     @Transactional(readOnly = true)
     public Order loadOrder(Long orderId) {
         OrderEntity entity = orderQueryJpaRepository.findWithItemsById(orderId)
-                .orElseThrow(() -> new NotFoundException(CommonErrorCode.COMMON_NOT_FOUND, "order not found: " + orderId));
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.COMMON_NOT_FOUND, "주문을 찾을 수 없습니다: " + orderId));
         return OrderEntityMapper.toDomain(entity);
     }
 
@@ -71,4 +71,3 @@ public class OrderPersistenceAdapter implements SaveOrderPort, LoadOrderPort, Or
         orderStatusHistoryJpaRepository.save(history);
     }
 }
-

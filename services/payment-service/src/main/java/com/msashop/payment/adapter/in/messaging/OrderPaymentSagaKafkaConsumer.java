@@ -43,10 +43,7 @@ public class OrderPaymentSagaKafkaConsumer {
                 rawMessage,
                 ack::acknowledge,
                 this::parseEnvelope,
-                sagaTopic,
-                dlqTopic,
-                consumerGroup,
-                EventTypes.STOCK_RESERVED::equals,
+                consumerSpec(),
                 envelope -> handleOrderPaymentRequestedUseCase.handle(
                         consumerGroup,
                         workerId,
@@ -59,5 +56,14 @@ public class OrderPaymentSagaKafkaConsumer {
 
     private EventEnvelope parseEnvelope(String rawMessage) throws Exception {
         return objectMapper.readValue(rawMessage, EventEnvelope.class);
+    }
+
+    private SagaConsumerSupport.ConsumerSpec consumerSpec() {
+        return new SagaConsumerSupport.ConsumerSpec(
+                sagaTopic,
+                dlqTopic,
+                consumerGroup,
+                EventTypes.STOCK_RESERVED::equals
+        );
     }
 }

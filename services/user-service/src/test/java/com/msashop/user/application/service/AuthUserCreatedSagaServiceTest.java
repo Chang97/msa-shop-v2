@@ -4,8 +4,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.msashop.common.event.EventEnvelope;
 import com.msashop.common.event.EventTypes;
 import com.msashop.common.event.payload.AuthUserCreatedPayload;
+import com.msashop.common.web.exception.BusinessException;
 import com.msashop.common.web.exception.CommonErrorCode;
-import com.msashop.common.web.exception.ValidationException;
 import com.msashop.user.application.event.UserSagaEventFactory;
 import com.msashop.user.application.port.in.ProvisionUserProfileUseCase;
 import com.msashop.user.application.port.out.OutboxEventPort;
@@ -95,7 +95,7 @@ class AuthUserCreatedSagaServiceTest {
                 any(Instant.class)
         )).thenReturn(true);
         when(objectMapper.readValue(sourceEvent.payloadJson(), AuthUserCreatedPayload.class)).thenReturn(payload);
-        doThrow(new ValidationException(CommonErrorCode.COMMON_VALIDATION, "forced failure"))
+        doThrow(new BusinessException(CommonErrorCode.COMMON_VALIDATION, "forced failure"))
                 .when(provisionUserProfileUseCase)
                 .provision(any());
         when(eventFactory.userProfileCreationFailed(

@@ -1,7 +1,7 @@
 package com.msashop.user.application.service;
 
+import com.msashop.common.web.exception.BusinessException;
 import com.msashop.common.web.exception.CommonErrorCode;
-import com.msashop.common.web.exception.NotFoundException;
 import com.msashop.user.application.port.in.DeactivateMeUseCase;
 import com.msashop.user.application.port.out.DisableAuthUserPort;
 import com.msashop.user.application.port.out.LoadUserPort;
@@ -29,9 +29,9 @@ public class DeactivateMeService implements DeactivateMeUseCase {
     @Transactional
     public void deactivateMe(Long userId) {
         User user = loadUserPort.findByAuthUserId(userId)
-                .orElseThrow(() -> new NotFoundException(
+                .orElseThrow(() -> new BusinessException(
                         CommonErrorCode.COMMON_NOT_FOUND,
-                        "User not found. userId=" + userId
+                        "사용자를 찾을 수 없습니다. userId=" + userId
                 ));
 
         // 도메인 상태 변경을 영속화

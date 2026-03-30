@@ -43,10 +43,7 @@ public class AuthUserSagaKafkaConsumer {
                 rawMessage,
                 ack::acknowledge,
                 this::parseEnvelope,
-                sagaTopic,
-                dlqTopic,
-                consumerGroup,
-                EventTypes.AUTH_USER_CREATED::equals,
+                consumerSpec(),
                 envelope -> handleAuthUserCreatedSagaUseCase.handle(
                         consumerGroup,
                         workerId,
@@ -59,5 +56,14 @@ public class AuthUserSagaKafkaConsumer {
 
     private EventEnvelope parseEnvelope(String rawMessage) throws Exception {
         return objectMapper.readValue(rawMessage, EventEnvelope.class);
+    }
+
+    private SagaConsumerSupport.ConsumerSpec consumerSpec() {
+        return new SagaConsumerSupport.ConsumerSpec(
+                sagaTopic,
+                dlqTopic,
+                consumerGroup,
+                EventTypes.AUTH_USER_CREATED::equals
+        );
     }
 }

@@ -14,7 +14,7 @@ public class OrderItem {
         this.productId = Objects.requireNonNull(productId, "productId");
         this.productName = Objects.requireNonNull(productName, "productName");
         if (quantity <= 0) {
-            throw new IllegalArgumentException("quantity must be > 0");
+            throw new IllegalArgumentException("수량은 1 이상이어야 합니다.");
         }
         this.quantity = quantity;
         this.unitPrice = requireNonNegative(unitPrice, "unitPrice");
@@ -44,9 +44,8 @@ public class OrderItem {
     private BigDecimal requireNonNegative(BigDecimal value, String field) {
         Objects.requireNonNull(value, field);
         if (value.compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException(field + " must be >= 0");
+            throw new IllegalArgumentException(field + " 값은 0 이상이어야 합니다.");
         }
         return value;
     }
 }
-

@@ -2,8 +2,8 @@ package com.msashop.common.web.exception;
 
 public enum UserErrorCode implements ErrorCode {
 
-    USER_CURRENT_MISSING("USER_001", 401, "Unauthenticated request: CurrentUser is missing."),
-    USER_NOT_FOUND("USER_002", 401, "User Not Found.");
+    USER_CURRENT_MISSING("USER_001", 404, "인증 사용자 정보를 찾을 수 없습니다."),
+    USER_NOT_FOUND("USER_002", 404, "사용자를 찾을 수 없습니다.");
 
     private final String code;
     private final int status;

@@ -6,9 +6,8 @@ import com.msashop.auth.application.port.in.model.RegisterCommand;
 import com.msashop.auth.application.port.out.CredentialPort;
 import com.msashop.auth.application.port.out.OutboxEventPort;
 import com.msashop.auth.application.port.out.UserRolePort;
+import com.msashop.common.web.exception.BusinessException;
 import com.msashop.common.web.exception.CommonErrorCode;
-import com.msashop.common.web.exception.ConflictException;
-import com.msashop.common.web.exception.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -35,15 +34,15 @@ public class RegisterService implements RegisterUseCase {
     public Long register(RegisterCommand command) {
         // 1) 입력 기본 검증(도메인/서비스 규칙)
         if (command.email() == null || command.loginId() == null || command.rawPassword() == null) {
-            throw new ValidationException(CommonErrorCode.COMMON_VALIDATION, "Missing required fields.");
+            throw new BusinessException(CommonErrorCode.COMMON_VALIDATION, "필수 입력값이 누락되었습니다.");
         }
 
         // 2) 중복 체크
         if (credentialPort.existsByEmail(command.email())) {
-            throw new ConflictException(CommonErrorCode.COMMON_CONFLICT, "Email already exists.");
+            throw new BusinessException(CommonErrorCode.COMMON_CONFLICT, "이미 사용 중인 이메일입니다.");
         }
         if (credentialPort.existsByLoginId(command.loginId())) {
-            throw new ConflictException(CommonErrorCode.COMMON_CONFLICT, "LoginId already exists.");
+            throw new BusinessException(CommonErrorCode.COMMON_CONFLICT, "이미 사용 중인 로그인 아이디입니다.");
         }
 
         // 3) 비밀번호 해시

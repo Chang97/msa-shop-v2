@@ -1,8 +1,8 @@
 package com.msashop.product.adapter.out.persistence.adapter;
 
 import com.msashop.common.event.payload.StockReservationItemPayload;
+import com.msashop.common.web.exception.BusinessException;
 import com.msashop.common.web.exception.CommonErrorCode;
-import com.msashop.common.web.exception.ConflictException;
 import com.msashop.common.web.exception.PaymentErrorCode;
 import com.msashop.product.adapter.out.persistence.entity.StockReservationEntity;
 import com.msashop.product.adapter.out.persistence.repo.ProductCommandJpaRepository;
@@ -59,9 +59,9 @@ public class StockReservationPersistenceAdapter implements StockReservationPort 
         aggregated.forEach((productId, qty) -> {
             int updated = productCommandJpaRepository.decreaseStock(productId, qty, ProductStatus.ON_SALE);
             if (updated == 0) {
-                throw new ConflictException(
+                throw new BusinessException(
                         PaymentErrorCode.PAYMENT_STOCK_SHORTAGE,
-                        "insufficient stock or concurrent update. productId: " + productId
+                        "재고가 부족하거나 동시성 충돌이 발생했습니다. productId: " + productId
                 );
             }
         });
@@ -84,9 +84,9 @@ public class StockReservationPersistenceAdapter implements StockReservationPort 
     public void confirm(String reservationId) {
         List<StockReservationEntity> reservations = stockReservationJpaRepository.findByReservationId(reservationId);
         if (reservations.isEmpty()) {
-            throw new ConflictException(
+            throw new BusinessException(
                     CommonErrorCode.COMMON_CONFLICT,
-                    "reservation not found. reservationId: " + reservationId
+                    "재고 예약 정보를 찾을 수 없습니다. reservationId: " + reservationId
             );
         }
 
@@ -97,9 +97,9 @@ public class StockReservationPersistenceAdapter implements StockReservationPort 
     public void release(String reservationId) {
         List<StockReservationEntity> reservations = stockReservationJpaRepository.findByReservationId(reservationId);
         if (reservations.isEmpty()) {
-            throw new ConflictException(
+            throw new BusinessException(
                     CommonErrorCode.COMMON_CONFLICT,
-                    "reservation not found. reservationId: " + reservationId
+                    "재고 예약 정보를 찾을 수 없습니다. reservationId: " + reservationId
             );
         }
 

@@ -1,8 +1,7 @@
 package com.msashop.product.application.service;
 
+import com.msashop.common.web.exception.BusinessException;
 import com.msashop.common.web.exception.CommonErrorCode;
-import com.msashop.common.web.exception.ConflictException;
-import com.msashop.common.web.exception.NotFoundException;
 import com.msashop.product.adapter.out.persistence.entity.ProductEntity;
 import com.msashop.product.adapter.out.persistence.repo.ProductCommandJpaRepository;
 import com.msashop.product.application.port.in.DecreaseStockUseCase;
@@ -34,22 +33,22 @@ public class DecreaseStockService implements DecreaseStockUseCase {
 
         aggregated.forEach((productId, qty) -> {
             ProductEntity entity = productCommandJpaRepository.findById(productId)
-                    .orElseThrow(() -> new NotFoundException(CommonErrorCode.COMMON_NOT_FOUND, "product not found. productId: " + productId));
+                    .orElseThrow(() -> new BusinessException(CommonErrorCode.COMMON_NOT_FOUND, "상품을 찾을 수 없습니다. productId: " + productId));
 
             if (Boolean.FALSE.equals(entity.getUseYn())) {
-                throw new ConflictException(CommonErrorCode.COMMON_CONFLICT, "product disabled. productId: " + productId);
+                throw new BusinessException(CommonErrorCode.COMMON_CONFLICT, "비활성화된 상품입니다. productId: " + productId);
             }
             if (entity.getStatus() != ProductStatus.ON_SALE) {
-                throw new ConflictException(CommonErrorCode.COMMON_CONFLICT, "product not on sale. productId: " + productId);
+                throw new BusinessException(CommonErrorCode.COMMON_CONFLICT, "판매 중인 상품이 아닙니다. productId: " + productId);
             }
             if (entity.getStock() == null || entity.getStock() < qty) {
-                throw new ConflictException(CommonErrorCode.COMMON_CONFLICT, "insufficient stock. productId: " + productId);
+                throw new BusinessException(CommonErrorCode.COMMON_CONFLICT, "재고가 부족합니다. productId: " + productId);
             }
 
             int updated = productCommandJpaRepository.decreaseStock(productId, qty, ProductStatus.ON_SALE);
             if (updated == 0) {
-                throw new ConflictException(PaymentErrorCode.PAYMENT_STOCK_SHORTAGE,
-                        "insufficient stock or concurrent update. productId: " + productId);
+                throw new BusinessException(PaymentErrorCode.PAYMENT_STOCK_SHORTAGE,
+                        "재고가 부족하거나 동시성 충돌이 발생했습니다. productId: " + productId);
             }
         });
     }
@@ -58,10 +57,10 @@ public class DecreaseStockService implements DecreaseStockUseCase {
         Map<Long, Integer> aggregated = new HashMap<>();
         commands.forEach(cmd -> {
             if (cmd == null || cmd.productId() == null) {
-                throw new NotFoundException(CommonErrorCode.COMMON_NOT_FOUND, "product not found. productId: null");
+                throw new BusinessException(CommonErrorCode.COMMON_NOT_FOUND, "상품 식별자가 올바르지 않습니다. productId: null");
             }
             if (cmd.quantity() <= 0) {
-                throw new ConflictException(CommonErrorCode.COMMON_CONFLICT, "quantity must be positive. productId: " + cmd.productId());
+                throw new BusinessException(CommonErrorCode.COMMON_CONFLICT, "수량은 1 이상이어야 합니다. productId: " + cmd.productId());
             }
             aggregated.merge(cmd.productId(), cmd.quantity(), Integer::sum);
         });

@@ -1,6 +1,6 @@
 package com.msashop.user.adapter.in.web;
 
-import com.msashop.common.web.exception.UnauthorizedException;
+import com.msashop.common.web.exception.BusinessException;
 import com.msashop.common.web.exception.UserErrorCode;
 import com.msashop.user.adapter.in.web.dto.UserMeResponse;
 import com.msashop.user.adapter.in.web.mapper.UserWebQueryMapper;
@@ -23,7 +23,7 @@ public class UserQueryController {
     public ResponseEntity<UserMeResponse> me(@AuthenticationPrincipal CurrentUser currentUser) {
         if (currentUser == null || currentUser.userId() == null) {
             // 공통 예외 처리 레이어에서 401로 매핑하는 방식 권장
-            throw new UnauthorizedException(UserErrorCode.USER_CURRENT_MISSING);
+            throw new BusinessException(UserErrorCode.USER_CURRENT_MISSING);
         }
 
         return ResponseEntity.ok(UserWebQueryMapper.toResponse(getMeService.getMe(currentUser.userId())));

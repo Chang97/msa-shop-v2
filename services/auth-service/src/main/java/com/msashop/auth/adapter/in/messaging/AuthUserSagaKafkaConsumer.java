@@ -43,10 +43,7 @@ public class AuthUserSagaKafkaConsumer {
                 rawMessage,
                 ack::acknowledge,
                 this::parseEnvelope,
-                sagaTopic,
-                dlqTopic,
-                consumerGroup,
-                this::isAuthCompletionEvent,
+                consumerSpec(),
                 envelope -> handleAuthUserSagaCompletionUseCase.handle(
                         consumerGroup,
                         workerId,
@@ -61,8 +58,13 @@ public class AuthUserSagaKafkaConsumer {
         return objectMapper.readValue(rawMessage, EventEnvelope.class);
     }
 
-    private boolean isAuthCompletionEvent(String eventType) {
-        return EventTypes.USER_PROFILE_CREATED.equals(eventType)
-                || EventTypes.USER_PROFILE_CREATION_FAILED.equals(eventType);
+    private SagaConsumerSupport.ConsumerSpec consumerSpec() {
+        return new SagaConsumerSupport.ConsumerSpec(
+                sagaTopic,
+                dlqTopic,
+                consumerGroup,
+                eventType -> EventTypes.USER_PROFILE_CREATED.equals(eventType)
+                        || EventTypes.USER_PROFILE_CREATION_FAILED.equals(eventType)
+        );
     }
 }

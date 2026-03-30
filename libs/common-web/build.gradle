@@ -28,7 +28,17 @@ dependencies {
 
     // Validation 예외(ConstraintViolationException) 처리
     api 'jakarta.validation:jakarta.validation-api'
+    api 'org.slf4j:slf4j-api'
+    compileOnly 'jakarta.servlet:jakarta.servlet-api'
 
     // 필요 시 Jackson 추가 (서비스 측에서 주로 제공)
     // api 'com.fasterxml.jackson.core:jackson-databind'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'jakarta.servlet:jakarta.servlet-api'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
 }

@@ -1,7 +1,7 @@
 package com.msashop.order.application.service;
 
+import com.msashop.common.web.exception.BusinessException;
 import com.msashop.common.web.exception.CommonErrorCode;
-import com.msashop.common.web.exception.ConflictException;
 import com.msashop.order.application.port.in.CancelOrderUseCase;
 import com.msashop.order.application.port.in.model.CancelOrderCommand;
 import com.msashop.order.application.port.out.LoadOrderPort;
@@ -29,7 +29,7 @@ public class CancelOrderService implements CancelOrderUseCase {
         try {
             order.cancel();
         } catch (IllegalStateException e) {
-            throw new ConflictException(CommonErrorCode.COMMON_CONFLICT, e.getMessage());
+            throw new BusinessException(CommonErrorCode.COMMON_CONFLICT, e.getMessage());
         }
         saveOrderPort.save(order);
         saveOrderStatusHistoryPort.saveHistory(order.getOrderId(), from, order.getStatus(), command.reason(), command.userId());

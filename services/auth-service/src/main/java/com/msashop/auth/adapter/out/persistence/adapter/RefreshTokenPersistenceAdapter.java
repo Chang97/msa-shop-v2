@@ -3,8 +3,8 @@ package com.msashop.auth.adapter.out.persistence.adapter;
 import com.msashop.auth.adapter.out.persistence.mapper.RefreshTokenEntityMapper;
 import com.msashop.auth.adapter.out.persistence.repo.RefreshTokenJpaRepository;
 import com.msashop.auth.application.port.out.RefreshTokenPort;
+import com.msashop.common.web.exception.BusinessException;
 import com.msashop.common.web.exception.CommonErrorCode;
-import com.msashop.common.web.exception.NotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,8 +41,7 @@ public class RefreshTokenPersistenceAdapter implements RefreshTokenPort {
     @Transactional
     public void revoke(String tokenHash) {
         var entity = refreshTokenJpaRepository.findByTokenHash(tokenHash)
-                .orElseThrow(() -> new NotFoundException(CommonErrorCode.COMMON_NOT_FOUND, "Refresh token not found: " + tokenHash));
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.COMMON_NOT_FOUND, "리프레시 토큰을 찾을 수 없습니다: " + tokenHash));
         entity.revoke();
     }
 }
-

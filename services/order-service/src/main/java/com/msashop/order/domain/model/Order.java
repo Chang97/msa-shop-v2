@@ -84,7 +84,7 @@ public class Order {
                                List<OrderItem> items) {
         Objects.requireNonNull(items, "items");
         if (items.isEmpty()) {
-            throw new IllegalArgumentException("order items cannot be empty");
+            throw new IllegalArgumentException("주문 상품은 1개 이상이어야 합니다.");
         }
         BigDecimal subtotal = items.stream()
                 .map(OrderItem::getLineAmount)
@@ -140,15 +140,15 @@ public class Order {
     public void cancel() {
         switch (this.status) {
             case CANCELLED -> { return; }
-            case PAID -> throw new IllegalStateException("ORDER_ALREADY_PAID");
+            case PAID -> throw new IllegalStateException("이미 결제가 완료된 주문입니다.");
             case CREATED, PENDING_PAYMENT -> this.status = OrderStatus.CANCELLED;
         }
     }
 
     public void startPayment() {
         switch (this.status) {
-            case PAID -> throw new IllegalStateException("ORDER_ALREADY_PAID");
-            case CANCELLED -> throw new IllegalStateException("ORDER_ALREADY_CANCELLED");
+            case PAID -> throw new IllegalStateException("이미 결제가 완료된 주문입니다.");
+            case CANCELLED -> throw new IllegalStateException("이미 취소된 주문입니다.");
             case PENDING_PAYMENT -> { return; } // idempotent
             case CREATED -> this.status = OrderStatus.PENDING_PAYMENT;
         }
@@ -157,8 +157,8 @@ public class Order {
     public void markPaid() {
         switch (this.status) {
             case PAID -> { return; } // idempotent
-            case CANCELLED -> throw new IllegalStateException("ORDER_ALREADY_CANCELLED");
-            case CREATED -> throw new IllegalStateException("ORDER_PAYMENT_NOT_STARTED");
+            case CANCELLED -> throw new IllegalStateException("이미 취소된 주문입니다.");
+            case CREATED -> throw new IllegalStateException("결제가 시작되지 않은 주문입니다.");
             case PENDING_PAYMENT -> this.status = OrderStatus.PAID;
         }
     }
@@ -238,7 +238,7 @@ public class Order {
     private BigDecimal requireNonNegative(BigDecimal value, String field) {
         Objects.requireNonNull(value, field);
         if (value.compareTo(BigDecimal.ZERO) < 0) {
-            throw new IllegalArgumentException(field + " must be >= 0");
+            throw new IllegalArgumentException(field + " 값은 0 이상이어야 합니다.");
         }
         return value;
     }

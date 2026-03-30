@@ -17,10 +17,7 @@ public final class SagaConsumerSupport {
             String rawMessage,
             AckAction ackAction,
             ThrowingEnvelopeParser envelopeParser,
-            String sagaTopic,
-            String dlqTopic,
-            String consumerGroup,
-            Predicate<String> interestedEventType,
+            ConsumerSpec spec,
             ThrowingEnvelopeHandler handler,
             DeadLetterPublisherPort deadLetterPublisher
     ) throws Exception {
@@ -29,9 +26,9 @@ public final class SagaConsumerSupport {
             envelope = envelopeParser.parse(rawMessage);
         } catch (Exception e) {
             deadLetterPublisher.publish(
-                    dlqTopic,
-                    sagaTopic,
-                    consumerGroup,
+                    spec.dlqTopic(),
+                    spec.sagaTopic(),
+                    spec.consumerGroup(),
                     "EVENT_ENVELOPE_DESERIALIZATION_FAILED",
                     e.getMessage(),
                     rawMessage
@@ -42,7 +39,7 @@ public final class SagaConsumerSupport {
 
         // 여러 서비스가 같은 토픽을 공유하므로
         // 관심 없는 이벤트는 listener 본문에서 분기하지 않고 바로 ack 한다.
-        if (!interestedEventType.test(envelope.eventType())) {
+        if (!spec.interestedEventType().test(envelope.eventType())) {
             ackAction.acknowledge();
             return;
         }
@@ -56,9 +53,9 @@ public final class SagaConsumerSupport {
             // envelope 파싱은 성공했지만 비즈니스 payload가 깨진 경우다.
             // 이런 메시지는 재시도보다 DLQ 격리가 맞다.
             deadLetterPublisher.publish(
-                    dlqTopic,
-                    sagaTopic,
-                    consumerGroup,
+                    spec.dlqTopic(),
+                    spec.sagaTopic(),
+                    spec.consumerGroup(),
                     e.reasonCode(),
                     e.getMessage(),
                     rawMessage
@@ -80,5 +77,13 @@ public final class SagaConsumerSupport {
     @FunctionalInterface
     public interface ThrowingEnvelopeHandler {
         boolean handle(EventEnvelope envelope) throws Exception;
+    }
+
+    public record ConsumerSpec(
+            String sagaTopic,
+            String dlqTopic,
+            String consumerGroup,
+            Predicate<String> interestedEventType
+    ) {
     }
 }

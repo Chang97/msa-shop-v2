@@ -1,5 +1,6 @@
 package com.msashop.payment.config.security;
 
+import com.msashop.common.web.filter.TraceIdFilter;
 import com.msashop.payment.common.security.GatewayAuthHeaderFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,6 +18,8 @@ public class SecurityConfig {
 
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, GatewayAuthHeaderFilter gatewayAuthHeaderFilter) throws Exception {
+        TraceIdFilter traceIdFilter = new TraceIdFilter();
+
         return http
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .csrf(AbstractHttpConfigurer::disable)
@@ -30,9 +33,9 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
 
+                .addFilterBefore(traceIdFilter, GatewayAuthHeaderFilter.class)
                 .addFilterBefore(gatewayAuthHeaderFilter, UsernamePasswordAuthenticationFilter.class)
 
                 .build();
     }
 }
-

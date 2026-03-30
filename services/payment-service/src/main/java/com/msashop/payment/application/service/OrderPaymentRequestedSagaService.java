@@ -126,7 +126,7 @@ public class OrderPaymentRequestedSagaService implements HandleOrderPaymentReque
             processedEventPort.markProcessed(consumerGroup, envelope.eventId(), Instant.now());
             throw new InvalidSagaMessageException(
                     "STOCK_RESERVED_PAYLOAD_DESERIALIZATION_FAILED",
-                    "StockReserved payload deserialization failed.",
+                    "StockReserved payload 역직렬화에 실패했습니다.",
                     e
             );
         }

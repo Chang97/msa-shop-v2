@@ -43,10 +43,7 @@ public class OrderPaymentSagaKafkaConsumer {
                 rawMessage,
                 ack::acknowledge,
                 this::parseEnvelope,
-                sagaTopic,
-                dlqTopic,
-                consumerGroup,
-                this::isRelevantEvent,
+                consumerSpec(),
                 envelope -> handleOrderPaymentSagaUseCase.handle(
                         consumerGroup,
                         workerId,
@@ -61,9 +58,14 @@ public class OrderPaymentSagaKafkaConsumer {
         return objectMapper.readValue(rawMessage, EventEnvelope.class);
     }
 
-    private boolean isRelevantEvent(String eventType) {
-        return EventTypes.STOCK_RESERVATION_REQUESTED.equals(eventType)
-                || EventTypes.PAYMENT_APPROVED.equals(eventType)
-                || EventTypes.PAYMENT_FAILED.equals(eventType);
+    private SagaConsumerSupport.ConsumerSpec consumerSpec() {
+        return new SagaConsumerSupport.ConsumerSpec(
+                sagaTopic,
+                dlqTopic,
+                consumerGroup,
+                eventType -> EventTypes.STOCK_RESERVATION_REQUESTED.equals(eventType)
+                        || EventTypes.PAYMENT_APPROVED.equals(eventType)
+                        || EventTypes.PAYMENT_FAILED.equals(eventType)
+        );
     }
 }

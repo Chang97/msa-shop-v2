@@ -10,7 +10,7 @@ import com.msashop.auth.application.port.in.model.LoginResult;
 import com.msashop.auth.application.port.in.model.LogoutCommand;
 import com.msashop.auth.application.port.in.model.RefreshCommand;
 import com.msashop.common.web.exception.AuthErrorCode;
-import com.msashop.common.web.exception.UnauthorizedException;
+import com.msashop.common.web.exception.BusinessException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -70,7 +70,7 @@ public class AuthenticationController {
             HttpServletRequest request
     ) {
         if (refreshToken == null || refreshToken.isBlank()) {
-            throw new UnauthorizedException(AuthErrorCode.AUTH_REFRESH_MISSING);
+            throw new BusinessException(AuthErrorCode.AUTH_REFRESH_MISSING);
 
         }
 
@@ -105,4 +105,3 @@ public class AuthenticationController {
                 .build();
     }
 }
-

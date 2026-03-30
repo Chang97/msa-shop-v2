@@ -1,6 +1,6 @@
 package com.msashop.user.application.service;
 
-import com.msashop.common.web.exception.NotFoundException;
+import com.msashop.common.web.exception.BusinessException;
 import com.msashop.common.web.exception.UserErrorCode;
 import com.msashop.user.application.mapper.UserQueryMapper;
 import com.msashop.user.application.port.in.GetMeUseCase;
@@ -33,7 +33,7 @@ public class GetMeService implements GetMeUseCase {
     @Override
     public UserResult getMe(Long userId) {
         UserRow row = loadUserWithRolesPort.findByAuthUserId(userId)
-                .orElseThrow(() -> new NotFoundException(UserErrorCode.USER_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
 
         return UserQueryMapper.toResult(row);
     }

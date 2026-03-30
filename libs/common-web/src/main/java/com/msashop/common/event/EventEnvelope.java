@@ -6,7 +6,7 @@ import java.time.Instant;
  * 서비스 간에 공통으로 사용하는 표준 이벤트 엔벨로프이다.
  *
  * @param eventId 멱등 처리와 추적에 사용하는 전역 고유 이벤트 식별자
- * @param eventType 예: {@code AuthUserRegistered} 같은 의미적 이벤트 이름
+ * @param eventType 예: {@code AuthUserCreated} 같은 의미적 이벤트 이름
  * @param aggregateType 이벤트를 발생시킨 애그리거트 종류
  * @param aggregateId 소스 서비스 내부의 애그리거트 식별자
  * @param sagaId 사가 흐름에 참여하는 경우 사용하는 사가 실행 식별자

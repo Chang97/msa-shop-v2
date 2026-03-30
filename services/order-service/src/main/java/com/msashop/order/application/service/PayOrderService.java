@@ -1,8 +1,7 @@
 package com.msashop.order.application.service;
 
+import com.msashop.common.web.exception.BusinessException;
 import com.msashop.common.web.exception.CommonErrorCode;
-import com.msashop.common.web.exception.ConflictException;
-import com.msashop.common.web.exception.UnauthorizedException;
 import com.msashop.order.application.event.OrderPaymentSagaEventFactory;
 import com.msashop.order.application.port.in.PayOrderUseCase;
 import com.msashop.order.application.port.in.model.PayOrderCommand;
@@ -31,14 +30,14 @@ public class PayOrderService implements PayOrderUseCase {
     public void payOrder(PayOrderCommand command) {
         Order order = loadOrderPort.loadOrder(command.orderId());
         if (!order.getUserId().equals(command.userId())) {
-            throw new UnauthorizedException(CommonErrorCode.COMMON_UNAUTHORIZED);
+            throw new BusinessException(CommonErrorCode.COMMON_UNAUTHORIZED);
         }
 
         OrderStatus from = order.getStatus();
         try {
             order.startPayment();
         } catch (IllegalStateException e) {
-            throw new ConflictException(CommonErrorCode.COMMON_CONFLICT, e.getMessage());
+            throw new BusinessException(CommonErrorCode.COMMON_CONFLICT, e.getMessage());
         }
 
         // 중복 pay 요청이 들어와도 saga가 중복 시작되면 안 된다.
