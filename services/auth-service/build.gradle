@@ -25,7 +25,7 @@ dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 
 	// DB 드라이버
-	runtimeOnly 'org.postgresql:postgresql:42.7.4'
+	runtimeOnly 'org.postgresql:postgresql:42.7.7'
 
 	// Redis (서비스별로 필요 없으면 제거 가능)
 	implementation 'org.springframework.boot:spring-boot-starter-data-redis'
@@ -36,7 +36,7 @@ dependencies {
 	// 유틸리티
 	implementation 'com.google.guava:guava:32.1.2-jre'
 	implementation "com.fasterxml.jackson.core:jackson-databind"
-	implementation 'org.apache.commons:commons-lang3:3.14.0'
+	implementation 'org.apache.commons:commons-lang3:3.18.0'
 	implementation 'commons-io:commons-io:2.15.1'
 
 	// Lombok (중복 제거 버전)
@@ -67,7 +67,7 @@ dependencies {
 
 	// JWT 발급/검증(기존 유지)
 	implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
-	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+	runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.6'
 	runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
 	implementation "org.bouncycastle:bcprov-jdk18on:1.78.1"
 

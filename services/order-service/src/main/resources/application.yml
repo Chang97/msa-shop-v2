@@ -1,3 +1,74 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: order-service
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:19092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+    consumer:
+      group-id: order-service-order-payment-saga
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+    listener:
+      ack-mode: manual
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: ${ORDER_DB_URL:jdbc:postgresql://localhost:15432/order_db}
+    username: ${ORDER_DB_USERNAME:order_user}
+    password: ${ORDER_DB_PASSWORD:order_pw}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:16379}
+  jpa:
+    hibernate:
+      ddl-auto: none
+
+clients:
+  product:
+    base-url: ${PRODUCT_BASE_URL:http://localhost:8082/internal/products}
+  payment:
+    base-url: ${PAYMENT_BASE_URL:http://localhost:8080/api/payment}
+
+app:
+  idempotency:
+    ttl-seconds: 300
+    key-prefix: order:idempotency
+  kafka:
+    topics:
+      order-payment-saga: order.payment.saga.v1
+      order-payment-saga-dlq: order.payment.saga.v1.dlq
+    consumers:
+      order-payment-saga-enabled: false
+      worker-id: ${HOSTNAME:order-service}
+      claim-timeout-seconds: 300
+    producer:
+      relay-enabled: false
+      batch-size: 100
+      fixed-delay-ms: 3000
+      worker-id: ${HOSTNAME:order-service}
+      claim-timeout-seconds: 300
+      max-retry-count: 5
+      retry-delay-seconds: 30
+
+security:
+  internal:
+    header-name: X-Internal-Secret
+    service-secret: ${INTERNAL_SERVICE_SECRET:local-internal-secret}
+  jwt:
+    secret: ${JWT_SECRET:local-dev-secret-change-me}
+
 logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} [traceId=%X{traceId}] - %msg%n"

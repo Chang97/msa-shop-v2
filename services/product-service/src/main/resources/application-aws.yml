@@ -1,29 +1,7 @@
-server:
-  port: 8082
-
 spring:
-  application:
-    name: product-service
-  flyway:
-    enabled: true
-    baseline-on-migrate: true
-    locations: classpath:db/migration
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:kafka:9092}
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.StringSerializer
-      acks: all
-    consumer:
-      group-id: product-service-order-payment-saga
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      auto-offset-reset: earliest
-      enable-auto-commit: false
-    listener:
-      ack-mode: manual
   datasource:
-    driver-class-name: org.postgresql.Driver
     url: jdbc:postgresql://${RDS_ENDPOINT:localhost}:5432/product_db
     username: ${RDS_USERNAME:product_user}
     password: ${RDS_PASSWORD:product_pw}
@@ -31,36 +9,12 @@ spring:
     redis:
       host: ${REDIS_HOST:redis}
       port: ${REDIS_PORT:6379}
-  jpa:
-    hibernate:
-      ddl-auto: none
 
 app:
-  cache:
-    product:
-      ttl-seconds: 300
-      key-prefix: product:detail
   kafka:
-    topics:
-      order-payment-saga: order.payment.saga.v1
-      order-payment-saga-dlq: order.payment.saga.v1.dlq
     consumers:
       order-payment-saga-enabled: true
-      worker-id: ${HOSTNAME:product-service}
-      claim-timeout-seconds: 300
     producer:
       relay-enabled: true
       batch-size: 20
       fixed-delay-ms: 1000
-      worker-id: ${HOSTNAME:product-service}
-      claim-timeout-seconds: 300
-      max-retry-count: 5
-      retry-delay-seconds: 30
-
-security:
-  jwt:
-    secret: ${JWT_SECRET:local-dev-secret-change-me}
-  internal:
-    header-name: X-Internal-Secret
-    service-secret: ${INTERNAL_SERVICE_SECRET:local-internal-secret}
-

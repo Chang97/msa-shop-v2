@@ -1,9 +1,4 @@
-server:
-  port: 8080
-
 spring:
-  application:
-    name: gateway
   cloud:
     gateway:
       routes:
@@ -27,13 +22,7 @@ spring:
           uri: http://user-service:8085
           predicates:
             - Path=/api/users/**
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          public-key-location: classpath:keys/jwt-public.pem
   data:
     redis:
       host: ${REDIS_HOST:redis}
       port: ${REDIS_PORT:6379}
-

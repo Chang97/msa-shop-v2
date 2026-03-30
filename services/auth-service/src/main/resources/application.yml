@@ -1,3 +1,103 @@
+server:
+  port: 8081
+
+clients:
+  user-service:
+    base-url: ${USER_SERVICE_BASE_URL:http://localhost:8085}
+
+spring:
+  application:
+    name: auth-service
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:19092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+    consumer:
+      group-id: auth-service-auth-user-saga
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      auto-offset-reset: earliest
+      enable-auto-commit: false
+    listener:
+      ack-mode: manual
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: ${AUTH_DB_URL:jdbc:postgresql://localhost:15432/auth_db}
+    username: ${AUTH_DB_USERNAME:auth_user}
+    password: ${AUTH_DB_PASSWORD:auth_pw}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      idle-timeout: 30000
+      connection-timeout: 20000
+      max-lifetime: 1800000
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:16379}
+  jpa:
+    hibernate:
+      ddl-auto: none
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: Asia/Seoul
+
+app:
+  auth:
+    cookie:
+      secure: false
+      same-site: Lax
+      path: /api/auth
+    refresh-token:
+      ttl-seconds: 604800
+      key-prefix: auth:refresh_token
+    authority:
+      cache-ttl-seconds: 600
+      key-prefix: auth:perm
+  kafka:
+    topics:
+      auth-user-saga: auth.user.saga.v1
+      auth-user-saga-dlq: auth.user.saga.v1.dlq
+    consumers:
+      auth-user-saga-enabled: true
+      worker-id: ${HOSTNAME:auth-service}
+      claim-timeout-seconds: 300
+    producer:
+      relay-enabled: true
+      batch-size: 100
+      fixed-delay-ms: 3000
+      worker-id: ${HOSTNAME:auth-service}
+      claim-timeout-seconds: 300
+      max-retry-count: 5
+      retry-delay-seconds: 30
+  permission:
+    cache:
+      ttl-seconds: 600
+      key-prefix: app:permission
+
+security:
+  internal:
+    header-name: X-Internal-Secret
+    service-secret: ${INTERNAL_SERVICE_SECRET:local-internal-secret}
+  service-accounts:
+    accounts:
+      - client-id: order-service
+        client-secret: ${ORDER_SERVICE_CLIENT_SECRET:local-order-service-secret}
+        permissions:
+          - PRODUCT_UPDATE
+  jwt:
+    issuer: auth-service
+    access-token-ttl-seconds: 1800
+    private-key-location: classpath:keys/jwt-private.pem
+    public-key-location: classpath:keys/jwt-public.pem
+
 logging:
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} [traceId=%X{traceId}] - %msg%n"

@@ -1,138 +1,18 @@
-# =========================
-# auth-service (local)
-# =========================
-server:
-  port: 8081                         # auth-service ?? ??
-
-clients:
-  user-service:
-    base-url: ${USER_SERVICE_BASE_URL:http://localhost:8085}
-
 spring:
-  application:
-    name: auth-service               # ??? ???(??/????/????? ???? ?? ??)
   flyway:
-    enabled: true
-    baseline-on-migrate: true
     locations: classpath:db/migration, classpath:db/seed/local
-  kafka:
-    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:19092}
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.StringSerializer
-      acks: all
-    consumer:
-      group-id: auth-service-auth-user-saga
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      auto-offset-reset: earliest
-      enable-auto-commit: false
-    listener:
-      ack-mode: manual
-
   devtools:
     restart:
-      enabled: true                  # ?? ?? ??(????)
+      enabled: true
     livereload:
-      enabled: true                  # ?? ?? ??(??????)
+      enabled: true
 
-  # --- DB: ???? DB ?? ?? (auth_db) ---
-  datasource:
-    driver-class-name: org.postgresql.Driver
-    url: ${AUTH_DB_URL:jdbc:postgresql://localhost:15432/auth_db}  # auth-service ?? DB
-    username: auth_user               # auth_db ?? ??
-    password: auth_pw                 # ??? ????(??? ENV ??)
-    hikari:
-      maximum-pool-size: 10           # ??? ? ??
-      minimum-idle: 2                 # ?? ?? ???
-      idle-timeout: 30000             # ?? ????(ms)
-      connection-timeout: 20000       # ??? ?? ????(ms)
-      max-lifetime: 1800000           # ??? ?? ??(ms)
-
-  # --- Redis: refresh token / ?? ?? ? ---
-  data:
-    redis:
-      host: ${REDIS_HOST:localhost}                 # ?? redis host
-      port: ${REDIS_PORT:16379}                      # ?? redis port
-      # password: ${REDIS_PASSWORD:}  # ?? ??? ?? ?? ??(?? ? compose? requirepass ??)
-
-  # --- JPA ---
-  jpa:
-    hibernate:
-      ddl-auto: none                  # validate/update/create ? ?? ? ??(??? ?? none/validate)
-    properties:
-      hibernate:
-        jdbc:
-          time_zone: Asia/Seoul       # ??? ???(??)
-
-# --- SQL ??(???) ---
 decorator:
   datasource:
     p6spy:
-      enabled: true                   # p6spy ???(???? ?? ??? ??)
+      enabled: true
 
 logging:
   level:
-    p6spy: INFO                       # p6spy ?? ??(?? ? DEBUG?)
+    p6spy: INFO
     org.springframework.security: DEBUG
-
-
-# =========================
-# app: auth ?? ?? (Redis ?/TTL ?)
-# =========================
-app:
-  auth:
-    cookie:
-      secure: false
-      same-site: Lax
-      path: /api/auth
-    refresh-token:
-      ttl-seconds: 604800             # Refresh Token TTL(?) = 7?
-      key-prefix: auth:refresh_token  # Redis key prefix(???/?? ??? ???)
-    authority:
-      cache-ttl-seconds: 600          # ?? ?? TTL(?) = 10?
-      key-prefix: auth:perm           # ?? ?? ? prefix
-  kafka:
-    topics:
-      auth-user-saga: auth.user.saga.v1
-      auth-user-saga-dlq: auth.user.saga.v1.dlq
-    consumers:
-      auth-user-saga-enabled: true
-      worker-id: ${HOSTNAME:auth-service}
-      claim-timeout-seconds: 300
-    producer:
-      relay-enabled: true
-      batch-size: 100
-      fixed-delay-ms: 3000
-      worker-id: ${HOSTNAME:auth-service}
-      claim-timeout-seconds: 300
-      max-retry-count: 5
-      retry-delay-seconds: 30
-
-
-  # (??) ??/??? ??? ??? ? ??
-  permission:
-    cache:
-      ttl-seconds: 600
-      key-prefix: app:permission
-
-# =========================
-# ?? ??? ? ??? ??(??)
-# =========================
-security:
-  internal:
-    header-name: X-Internal-Secret    # ?? ?? ??? ???(??)
-    service-secret: ${INTERNAL_SERVICE_SECRET:local-internal-secret}  # ?? ?? ???(?? ???)
-
-  # ??? ??(?? ?? ?? ??) - ?? ? ??
-  service-accounts:
-    accounts:
-      - client-id: order-service
-        client-secret: ${ORDER_SERVICE_CLIENT_SECRET:local-order-service-secret}
-        permissions:
-          - PRODUCT_UPDATE            # ?: ?? ??(??)
-  jwt:
-    issuer: auth-service
-    access-token-ttl-seconds: 1800
-    private-key-location: classpath:keys/jwt-private.pem
-    public-key-location: classpath:keys/jwt-public.pem
