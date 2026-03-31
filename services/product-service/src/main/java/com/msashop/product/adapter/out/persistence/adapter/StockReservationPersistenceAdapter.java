@@ -5,6 +5,7 @@ import com.msashop.common.web.exception.BusinessException;
 import com.msashop.common.web.exception.CommonErrorCode;
 import com.msashop.common.web.exception.PaymentErrorCode;
 import com.msashop.product.adapter.out.persistence.entity.StockReservationEntity;
+import com.msashop.product.adapter.out.persistence.entity.StockReservationItemEntity;
 import com.msashop.product.adapter.out.persistence.repo.ProductCommandJpaRepository;
 import com.msashop.product.adapter.out.persistence.repo.StockReservationJpaRepository;
 import com.msashop.product.application.port.out.StockReservationPort;
@@ -21,14 +22,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * 예약 재고는 "가용 stock을 먼저 줄이고, 실패 시 다시 돌려주는 방식"으로 구현한다.
- *
- * 장점:
- * - 추가 reserved_stock 컬럼 없이 현재 stock 컬럼만으로 가용 재고 관리 가능
- * - 주문/결제/재고 경계를 유지하면서도 동시성 제어가 단순하다
- *
- * 주의:
- * - reserve() 중간에 하나라도 실패하면 트랜잭션 롤백으로 전체 예약이 취소된다
+ * 주문 단위 재고 예약을 저장하고 조회하는 영속성 어댑터.
  */
 @Component
 @RequiredArgsConstructor
@@ -49,13 +43,72 @@ public class StockReservationPersistenceAdapter implements StockReservationPort 
 
     @Override
     public void reserve(String reservationId, Long orderId, List<StockReservationItemPayload> items) {
-        Map<Long, Integer> aggregated = items.stream()
+        Map<Long, Integer> aggregated = aggregateQuantities(items);
+        decreaseAvailableStock(aggregated);
+        saveReservation(reservationId, orderId, aggregated);
+    }
+
+    @Override
+    public void confirm(String reservationId) {
+        StockReservationEntity entity = stockReservationJpaRepository.findByReservationId(reservationId)
+                .orElseThrow(() -> new BusinessException(
+                        CommonErrorCode.COMMON_CONFLICT,
+                        "재고 예약 정보를 찾을 수 없습니다. reservationId: " + reservationId
+                ));
+
+        entity.confirm();
+    }
+
+    @Override
+    public void release(String reservationId) {
+        StockReservationEntity entity = stockReservationJpaRepository.findByReservationId(reservationId)
+                .orElseThrow(() -> new BusinessException(
+                        CommonErrorCode.COMMON_CONFLICT,
+                        "재고 예약 정보를 찾을 수 없습니다. reservationId: " + reservationId
+                ));
+
+        if (!entity.release()) {
+            return;
+        }
+        restoreAvailableStock(entity.getItems());
+    }
+
+    /**
+     * 만료 시각이 지난 RESERVED 예약을 EXPIRED로 바꾸고 재고를 복구한다.
+     */
+    public int expireReservations(Instant now) {
+        List<StockReservationEntity> expiredEntities = stockReservationJpaRepository.findAllByStatusAndExpiresAtBefore(
+                StockReservationStatus.RESERVED,
+                now
+        );
+
+        int expiredCount = 0;
+        for (StockReservationEntity entity : expiredEntities) {
+            if (!entity.expire()) {
+                continue;
+            }
+            restoreAvailableStock(entity.getItems());
+            expiredCount++;
+        }
+        return expiredCount;
+    }
+
+    /**
+     * 같은 상품이 여러 번 들어오면 상품별 수량으로 합산한다.
+     */
+    private Map<Long, Integer> aggregateQuantities(List<StockReservationItemPayload> items) {
+        return items.stream()
                 .collect(Collectors.toMap(
                         StockReservationItemPayload::productId,
                         StockReservationItemPayload::quantity,
                         Integer::sum
                 ));
+    }
 
+    /**
+     * 이 프로젝트의 재고 예약은 가용 재고를 먼저 차감하는 방식으로 동작한다.
+     */
+    private void decreaseAvailableStock(Map<Long, Integer> aggregated) {
         aggregated.forEach((productId, qty) -> {
             int updated = productCommandJpaRepository.decreaseStock(productId, qty, ProductStatus.ON_SALE);
             if (updated == 0) {
@@ -65,54 +118,31 @@ public class StockReservationPersistenceAdapter implements StockReservationPort 
                 );
             }
         });
-
-        List<StockReservationEntity> reservations = aggregated.entrySet().stream()
-                .map(entry -> StockReservationEntity.builder()
-                        .reservationId(reservationId)
-                        .orderId(orderId)
-                        .productId(entry.getKey())
-                        .quantity(entry.getValue())
-                        .status(StockReservationStatus.RESERVED)
-                        .expiresAt(Instant.now().plusSeconds(600))
-                        .build())
-                .toList();
-
-        stockReservationJpaRepository.saveAll(reservations);
     }
 
-    @Override
-    public void confirm(String reservationId) {
-        List<StockReservationEntity> reservations = stockReservationJpaRepository.findByReservationId(reservationId);
-        if (reservations.isEmpty()) {
-            throw new BusinessException(
-                    CommonErrorCode.COMMON_CONFLICT,
-                    "재고 예약 정보를 찾을 수 없습니다. reservationId: " + reservationId
-            );
-        }
-
-        reservations.forEach(StockReservationEntity::confirm);
+    /**
+     * 주문 단위 예약 헤더와 아이템을 저장한다.
+     */
+    private void saveReservation(String reservationId, Long orderId, Map<Long, Integer> aggregated) {
+        StockReservationEntity reservation = StockReservationEntity.of(
+                reservationId,
+                orderId,
+                StockReservationStatus.RESERVED,
+                Instant.now().plusSeconds(600)
+        );
+        aggregated.forEach(reservation::addItem);
+        stockReservationJpaRepository.save(reservation);
     }
 
-    @Override
-    public void release(String reservationId) {
-        List<StockReservationEntity> reservations = stockReservationJpaRepository.findByReservationId(reservationId);
-        if (reservations.isEmpty()) {
-            throw new BusinessException(
-                    CommonErrorCode.COMMON_CONFLICT,
-                    "재고 예약 정보를 찾을 수 없습니다. reservationId: " + reservationId
+    /**
+     * 예약 아이템 목록을 기준으로 가용 재고를 복구한다.
+     */
+    private void restoreAvailableStock(List<StockReservationItemEntity> items) {
+        for (StockReservationItemEntity item : items) {
+            productCommandJpaRepository.increaseStock(
+                    item.getProductId(),
+                    item.getQuantity()
             );
-        }
-
-        for (StockReservationEntity reservation : reservations) {
-            if (reservation.getStatus() == StockReservationStatus.RESERVED) {
-                // 상태 변경을 먼저 반영해 flush 대상에 올린 뒤 stock 복구 쿼리를 실행한다.
-                // increaseStock()는 clearAutomatically=true 이므로 순서가 반대면 RELEASED가 유실될 수 있다.
-                reservation.release();
-                productCommandJpaRepository.increaseStock(
-                        reservation.getProductId(),
-                        reservation.getQuantity()
-                );
-            }
         }
     }
 }

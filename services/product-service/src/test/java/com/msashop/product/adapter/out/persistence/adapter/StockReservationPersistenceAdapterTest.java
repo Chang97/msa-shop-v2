@@ -3,6 +3,7 @@ package com.msashop.product.adapter.out.persistence.adapter;
 import com.msashop.common.event.payload.StockReservationItemPayload;
 import com.msashop.product.adapter.out.persistence.entity.ProductEntity;
 import com.msashop.product.adapter.out.persistence.entity.StockReservationEntity;
+import com.msashop.product.adapter.out.persistence.entity.StockReservationItemEntity;
 import com.msashop.product.adapter.out.persistence.repo.ProductCommandJpaRepository;
 import com.msashop.product.adapter.out.persistence.repo.StockReservationJpaRepository;
 import com.msashop.product.config.JpaAuditConfig;
@@ -15,6 +16,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.annotation.Import;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -39,17 +41,11 @@ class StockReservationPersistenceAdapterTest {
     private StockReservationJpaRepository stockReservationJpaRepository;
 
     /**
-     * 목적:
-     * - reserve() 호출 시 실제 product.stock이 감소하는지
-     * - stock_reservation row가 RESERVED 상태로 생성되는지
-     *
-     * 기대값:
-     * - 상품 재고가 예약 수량만큼 감소한다
-     * - reservationId 기준 row가 생성되고 상태는 RESERVED다
+     * reserve 호출 시 재고 차감과 주문 단위 예약 헤더/아이템 저장이 함께 일어나는지 검증한다.
      */
     @Test
-    @DisplayName("reserve 호출 시 재고를 감소시키고 예약 row를 생성한다")
-    void should_decrease_stock_and_create_reservation_rows_when_reserve_is_called() {
+    @DisplayName("reserve 호출 시 재고를 차감하고 예약 헤더와 아이템을 저장한다")
+    void should_decrease_stock_and_create_reservation_header_and_items_when_reserve_is_called() {
         ProductEntity product = productCommandJpaRepository.saveAndFlush(ProductEntity.builder()
                 .productName("테스트 상품")
                 .price(new BigDecimal("10000"))
@@ -65,27 +61,22 @@ class StockReservationPersistenceAdapterTest {
         );
 
         ProductEntity reloadedProduct = productCommandJpaRepository.findById(product.getProductId()).orElseThrow();
-        List<StockReservationEntity> reservations = stockReservationJpaRepository.findByReservationId("reservation-1");
+        StockReservationEntity reservation = stockReservationJpaRepository.findByReservationId("reservation-1").orElseThrow();
 
         assertThat(reloadedProduct.getStock()).isEqualTo(7);
-        assertThat(reservations).hasSize(1);
-        assertThat(reservations.get(0).getOrderId()).isEqualTo(1L);
-        assertThat(reservations.get(0).getProductId()).isEqualTo(product.getProductId());
-        assertThat(reservations.get(0).getQuantity()).isEqualTo(3);
-        assertThat(reservations.get(0).getStatus()).isEqualTo(StockReservationStatus.RESERVED);
+        assertThat(reservation.getOrderId()).isEqualTo(1L);
+        assertThat(reservation.getStatus()).isEqualTo(StockReservationStatus.RESERVED);
+        assertThat(reservation.getItems()).hasSize(1);
+        StockReservationItemEntity item = reservation.getItems().get(0);
+        assertThat(item.getProductId()).isEqualTo(product.getProductId());
+        assertThat(item.getQuantity()).isEqualTo(3);
     }
 
     /**
-     * 목적:
-     * - release() 호출 시 RESERVED 예약이 RELEASED로 바뀌고
-     *   감소됐던 재고가 복구되는지 확인한다
-     *
-     * 기대값:
-     * - 상품 재고가 원래 값으로 복구된다
-     * - 예약 상태가 RELEASED가 된다
+     * release 호출 시 RESERVED 예약만 해제하고 차감했던 재고를 복구하는지 검증한다.
      */
     @Test
-    @DisplayName("release 호출 시 재고를 복구하고 예약 상태를 RELEASED로 변경한다")
+    @DisplayName("release 호출 시 재고를 복구하고 예약 상태를 RELEASED로 바꾼다")
     void should_restore_stock_and_mark_reservation_released_when_release_is_called() {
         ProductEntity product = productCommandJpaRepository.saveAndFlush(ProductEntity.builder()
                 .productName("테스트 상품")
@@ -104,23 +95,17 @@ class StockReservationPersistenceAdapterTest {
         adapter.release("reservation-2");
 
         ProductEntity reloadedProduct = productCommandJpaRepository.findById(product.getProductId()).orElseThrow();
-        List<StockReservationEntity> reservations = stockReservationJpaRepository.findByReservationId("reservation-2");
+        StockReservationEntity reservation = stockReservationJpaRepository.findByReservationId("reservation-2").orElseThrow();
 
         assertThat(reloadedProduct.getStock()).isEqualTo(10);
-        assertThat(reservations).hasSize(1);
-        assertThat(reservations.get(0).getStatus()).isEqualTo(StockReservationStatus.RELEASED);
+        assertThat(reservation.getStatus()).isEqualTo(StockReservationStatus.RELEASED);
     }
 
     /**
-     * 목적:
-     * - confirm() 호출 시 예약이 최종 확정 상태로 바뀌는지 확인한다
-     *
-     * 기대값:
-     * - stock은 추가로 감소하지 않는다
-     * - 예약 상태만 CONFIRMED로 바뀐다
+     * confirm 호출 시 재고는 유지하고 예약 상태만 CONFIRMED로 바꾸는지 검증한다.
      */
     @Test
-    @DisplayName("confirm 호출 시 예약 상태를 CONFIRMED로 변경한다")
+    @DisplayName("confirm 호출 시 예약 상태를 CONFIRMED로 바꾼다")
     void should_mark_reservation_confirmed_when_confirm_is_called() {
         ProductEntity product = productCommandJpaRepository.saveAndFlush(ProductEntity.builder()
                 .productName("테스트 상품")
@@ -139,10 +124,55 @@ class StockReservationPersistenceAdapterTest {
         adapter.confirm("reservation-3");
 
         ProductEntity reloadedProduct = productCommandJpaRepository.findById(product.getProductId()).orElseThrow();
-        List<StockReservationEntity> reservations = stockReservationJpaRepository.findByReservationId("reservation-3");
+        StockReservationEntity reservation = stockReservationJpaRepository.findByReservationId("reservation-3").orElseThrow();
 
         assertThat(reloadedProduct.getStock()).isEqualTo(8);
-        assertThat(reservations).hasSize(1);
-        assertThat(reservations.get(0).getStatus()).isEqualTo(StockReservationStatus.CONFIRMED);
+        assertThat(reservation.getStatus()).isEqualTo(StockReservationStatus.CONFIRMED);
+    }
+
+    /**
+     * 만료 시각이 지난 RESERVED 예약은 EXPIRED로 바꾸고 재고를 복구하는지 검증한다.
+     */
+    @Test
+    @DisplayName("만료된 RESERVED 예약은 EXPIRED로 바꾸고 재고를 복구한다")
+    void should_expire_reserved_reservations_and_restore_stock() {
+        ProductEntity product = productCommandJpaRepository.saveAndFlush(ProductEntity.builder()
+                .productName("테스트 상품")
+                .price(new BigDecimal("10000"))
+                .stock(10)
+                .status(ProductStatus.ON_SALE)
+                .useYn(true)
+                .build());
+
+        adapter.reserve(
+                "reservation-4",
+                4L,
+                List.of(new StockReservationItemPayload(product.getProductId(), 2))
+        );
+
+        StockReservationEntity reservation = stockReservationJpaRepository.findByReservationId("reservation-4").orElseThrow();
+        reserveExpired(reservation, Instant.now().minusSeconds(1));
+
+        int expiredCount = adapter.expireReservations(Instant.now());
+
+        ProductEntity reloadedProduct = productCommandJpaRepository.findById(product.getProductId()).orElseThrow();
+        StockReservationEntity expiredReservation = stockReservationJpaRepository.findByReservationId("reservation-4").orElseThrow();
+
+        assertThat(expiredCount).isEqualTo(1);
+        assertThat(reloadedProduct.getStock()).isEqualTo(10);
+        assertThat(expiredReservation.getStatus()).isEqualTo(StockReservationStatus.EXPIRED);
+    }
+
+    /**
+     * 테스트에서 예약 만료 시각을 강제로 당겨 만료 대상을 만든다.
+     */
+    private void reserveExpired(StockReservationEntity reservation, Instant expiresAt) {
+        try {
+            java.lang.reflect.Field field = StockReservationEntity.class.getDeclaredField("expiresAt");
+            field.setAccessible(true);
+            field.set(reservation, expiresAt);
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalStateException("expiresAt 조작에 실패했습니다.", e);
+        }
     }
 }

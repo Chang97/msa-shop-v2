@@ -1,49 +1,45 @@
 package com.msashop.product.adapter.out.persistence.entity;
 
 import com.msashop.product.domain.model.StockReservationStatus;
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 /**
- * 주문 결제 saga 동안 임시로 잡아둔 재고를 표현하는 엔티티.
- *
- * reservationId:
- * 한 주문에 포함된 여러 상품 예약 row를 같은 묶음으로 추적하기 위한 식별자
- *
- * status:
- * RESERVED  - 재고를 선점했고 아직 결제 결과를 기다리는 상태
- * CONFIRMED - 결제가 성공해서 예약을 최종 확정한 상태
- * RELEASED  - 결제가 실패해서 재고를 다시 돌려준 상태
+ * 주문 단위 재고 예약 헤더 엔티티.
  */
 @Entity
 @Table(name = "stock_reservation")
 @Getter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
-public class StockReservationEntity {
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+public class StockReservationEntity extends BaseAuditEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "stock_reservation_id")
     private Long stockReservationId;
 
-    @Column(name = "reservation_id", nullable = false, length = 64)
+    @Column(name = "reservation_id", nullable = false, length = 64, unique = true)
     private String reservationId;
 
     @Column(name = "order_id", nullable = false)
     private Long orderId;
-
-    @Column(name = "product_id", nullable = false)
-    private Long productId;
-
-    @Column(name = "quantity", nullable = false)
-    private Integer quantity;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 20)
@@ -52,15 +48,73 @@ public class StockReservationEntity {
     @Column(name = "expires_at")
     private Instant expiresAt;
 
-    public void confirm() {
-        if (this.status == StockReservationStatus.RESERVED) {
-            this.status = StockReservationStatus.CONFIRMED;
-        }
+    @OneToMany(mappedBy = "stockReservation", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private final List<StockReservationItemEntity> items = new ArrayList<>();
+
+    private StockReservationEntity(
+            String reservationId,
+            Long orderId,
+            StockReservationStatus status,
+            Instant expiresAt
+    ) {
+        this.reservationId = Objects.requireNonNull(reservationId, "reservationId");
+        this.orderId = Objects.requireNonNull(orderId, "orderId");
+        this.status = Objects.requireNonNull(status, "status");
+        this.expiresAt = expiresAt;
     }
 
-    public void release() {
-        if (this.status == StockReservationStatus.RESERVED) {
-            this.status = StockReservationStatus.RELEASED;
+    /**
+     * 새 예약 헤더 엔티티를 만든다.
+     */
+    public static StockReservationEntity of(
+            String reservationId,
+            Long orderId,
+            StockReservationStatus status,
+            Instant expiresAt
+    ) {
+        return new StockReservationEntity(reservationId, orderId, status, expiresAt);
+    }
+
+    /**
+     * 예약 헤더에 상품별 예약 수량 아이템을 추가한다.
+     */
+    public void addItem(Long productId, Integer quantity) {
+        items.add(StockReservationItemEntity.of(this, productId, quantity));
+    }
+
+    /**
+     * RESERVED 상태의 예약을 최종 확정한다.
+     */
+    public boolean confirm() {
+        if (status != StockReservationStatus.RESERVED) {
+            return false;
         }
+        this.status = StockReservationStatus.CONFIRMED;
+        this.expiresAt = null;
+        return true;
+    }
+
+    /**
+     * RESERVED 상태의 예약을 해제한다.
+     */
+    public boolean release() {
+        if (status != StockReservationStatus.RESERVED) {
+            return false;
+        }
+        this.status = StockReservationStatus.RELEASED;
+        this.expiresAt = null;
+        return true;
+    }
+
+    /**
+     * RESERVED 상태의 예약을 만료 처리한다.
+     */
+    public boolean expire() {
+        if (status != StockReservationStatus.RESERVED) {
+            return false;
+        }
+        this.status = StockReservationStatus.EXPIRED;
+        this.expiresAt = null;
+        return true;
     }
 }

@@ -6,7 +6,9 @@ import jakarta.validation.constraints.Size;
 import java.math.BigDecimal;
 
 public record CreateProductRequest(
-        @NotNull @Size(max = 120) String productName,
+        @NotNull(message = "상품명은 필수입니다.")
+        @Size(max = 120, message = "상품명은 120자 이하여야 합니다.")
+        String productName,
         BigDecimal price,
         int stock
 ) {

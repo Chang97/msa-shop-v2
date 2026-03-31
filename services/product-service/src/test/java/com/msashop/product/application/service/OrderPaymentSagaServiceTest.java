@@ -3,13 +3,17 @@ package com.msashop.product.application.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.msashop.common.event.EventEnvelope;
 import com.msashop.common.event.EventTypes;
+import com.msashop.common.event.payload.PaymentApprovedPayload;
 import com.msashop.common.event.payload.PaymentFailedPayload;
 import com.msashop.common.event.payload.StockReservationItemPayload;
 import com.msashop.common.event.payload.StockReservationRequestedPayload;
+import com.msashop.common.web.exception.BusinessException;
+import com.msashop.common.web.exception.PaymentErrorCode;
 import com.msashop.product.application.event.ProductSagaEventFactory;
 import com.msashop.product.application.port.out.OutboxEventPort;
 import com.msashop.product.application.port.out.ProcessedEventPort;
 import com.msashop.product.application.port.out.StockReservationPort;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -23,6 +27,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -30,12 +35,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * OrderPaymentSagaService 단위 테스트.
- *
- * 검증 목적:
- * - product-service가 예약재고의 진실 소스로서 올바르게 동작하는지
- * - 예약 성공 시 다음 saga 단계로 이벤트를 넘기는지
- * - 결제 실패 시 예약을 해제하고 재고 복구 책임을 수행하는지
+ * 주문-결제 saga에서 product-service가 맡은 재고 예약 흐름을 검증한다.
  */
 @ExtendWith(MockitoExtension.class)
 class OrderPaymentSagaServiceTest {
@@ -59,45 +59,16 @@ class OrderPaymentSagaServiceTest {
     private OrderPaymentSagaService service;
 
     /**
-     * 재고 예약 성공 케이스.
-     *
-     * 시나리오:
-     * - StockReservationRequested 이벤트 수신
-     * - 기존 활성 reservation 없음
-     * - reserve 호출이 정상 수행됨
-     *
-     * 기대값:
-     * - 새 reservationId를 발급해 reserve를 호출한다
-     * - StockReserved 이벤트를 outbox에 적재한다
-     * - 원본 이벤트는 processed 처리된다
+     * 신규 예약 요청이면 재고 예약 후 STOCK_RESERVED 이벤트를 적재해야 한다.
      */
     @Test
+    @DisplayName("신규 예약 요청이면 재고를 예약하고 STOCK_RESERVED 이벤트를 적재한다")
     void should_reserve_stock_and_append_stock_reserved_event() throws Exception {
         EventEnvelope sourceEvent = stockReservationRequestedEvent();
         StockReservationRequestedPayload payload = stockReservationRequestedPayload();
+        EventEnvelope reservedEvent = stockReservedEvent();
 
-        EventEnvelope reservedEvent = new EventEnvelope(
-                "event-2",
-                EventTypes.STOCK_RESERVED,
-                "STOCK_RESERVATION",
-                "reservation-1",
-                "saga-1",
-                "corr-1",
-                "event-1",
-                "product-service",
-                "order.payment.saga.v1",
-                "1",
-                Instant.now(),
-                "{\"orderId\":1}"
-        );
-
-        when(processedEventPort.claim(
-                eq("product-group"),
-                eq(sourceEvent),
-                eq("product-worker"),
-                any(Instant.class),
-                any(Instant.class)
-        )).thenReturn(true);
+        mockClaimSuccess(sourceEvent);
         when(objectMapper.readValue(sourceEvent.payloadJson(), StockReservationRequestedPayload.class)).thenReturn(payload);
         when(stockReservationPort.findActiveReservationId(1L)).thenReturn(Optional.empty());
         when(productSagaEventFactory.stockReserved(eq(sourceEvent), eq(payload), anyString())).thenReturn(reservedEvent);
@@ -108,22 +79,95 @@ class OrderPaymentSagaServiceTest {
         verify(stockReservationPort).reserve(anyString(), eq(1L), eq(payload.items()));
         verify(outboxEventPort).append(reservedEvent);
         verify(processedEventPort).markProcessed(eq("product-group"), eq("event-1"), any(Instant.class));
-        verify(processedEventPort, never()).releaseClaim(any(), any(), any());
+        verify(processedEventPort, never()).releaseClaim(anyString(), anyString(), anyString());
     }
 
     /**
-     * 결제 실패 후 예약 해제 케이스.
-     *
-     * 시나리오:
-     * - PaymentFailed 이벤트 수신
-     *
-     * 기대값:
-     * - reservationId 기준으로 예약 해제가 호출된다
-     * - 이 과정에서 product-service는 예약 재고를 다시 판매 가능 재고로 복구한다
-     * - 추가 saga 이벤트는 발행하지 않는다
-     * - 원본 이벤트는 processed 처리된다
+     * 이미 활성 예약이 있으면 새 예약을 만들지 않고 기존 reservationId를 재사용해야 한다.
      */
     @Test
+    @DisplayName("활성 예약이 이미 있으면 기존 reservationId를 재사용한다")
+    void should_reuse_existing_reservation_when_active_reservation_exists() throws Exception {
+        EventEnvelope sourceEvent = stockReservationRequestedEvent();
+        StockReservationRequestedPayload payload = stockReservationRequestedPayload();
+        EventEnvelope reservedEvent = stockReservedEvent();
+
+        mockClaimSuccess(sourceEvent);
+        when(objectMapper.readValue(sourceEvent.payloadJson(), StockReservationRequestedPayload.class)).thenReturn(payload);
+        when(stockReservationPort.findActiveReservationId(1L)).thenReturn(Optional.of("reservation-existing"));
+        when(productSagaEventFactory.stockReserved(sourceEvent, payload, "reservation-existing")).thenReturn(reservedEvent);
+
+        boolean handled = service.handle("product-group", "product-worker", 300L, sourceEvent);
+
+        assertTrue(handled);
+        verify(stockReservationPort, never()).reserve(anyString(), anyLong(), any());
+        verify(outboxEventPort).append(reservedEvent);
+        verify(processedEventPort).markProcessed(eq("product-group"), eq("event-1"), any(Instant.class));
+    }
+
+    /**
+     * 재고 부족 같은 비즈니스 실패는 DLQ가 아니라 STOCK_RESERVATION_FAILED 이벤트로 전환해야 한다.
+     */
+    @Test
+    @DisplayName("재고 부족이면 STOCK_RESERVATION_FAILED 이벤트를 적재하고 processed 처리한다")
+    void should_append_stock_reservation_failed_event_when_reservation_fails_by_business_rule() throws Exception {
+        EventEnvelope sourceEvent = stockReservationRequestedEvent();
+        StockReservationRequestedPayload payload = stockReservationRequestedPayload();
+        EventEnvelope failedEvent = stockReservationFailedEvent();
+
+        mockClaimSuccess(sourceEvent);
+        when(objectMapper.readValue(sourceEvent.payloadJson(), StockReservationRequestedPayload.class)).thenReturn(payload);
+        when(stockReservationPort.findActiveReservationId(1L)).thenReturn(Optional.empty());
+        when(productSagaEventFactory.stockReservationFailed(
+                eq(sourceEvent),
+                eq(payload),
+                eq("STOCK_RESERVATION_FAILED"),
+                anyString()
+        )).thenReturn(failedEvent);
+        whenThrowStockShortageOnReserve();
+
+        boolean handled = service.handle("product-group", "product-worker", 300L, sourceEvent);
+
+        assertTrue(handled);
+        verify(outboxEventPort).append(failedEvent);
+        verify(processedEventPort).markProcessed(eq("product-group"), eq("event-1"), any(Instant.class));
+        verify(processedEventPort, never()).releaseClaim(anyString(), anyString(), anyString());
+    }
+
+    /**
+     * 결제 승인 이벤트는 기존 예약을 확정 상태로만 바꿔야 한다.
+     */
+    @Test
+    @DisplayName("PAYMENT_APPROVED를 받으면 예약을 CONFIRMED로 확정한다")
+    void should_confirm_reservation_when_payment_approved_event_is_received() throws Exception {
+        EventEnvelope approvedEvent = paymentApprovedEvent();
+        PaymentApprovedPayload payload = new PaymentApprovedPayload(
+                1L,
+                10L,
+                "reservation-1",
+                "idem-1",
+                "FAKE",
+                "tx-1",
+                new BigDecimal("10000"),
+                "KRW"
+        );
+
+        mockClaimSuccess(approvedEvent);
+        when(objectMapper.readValue(approvedEvent.payloadJson(), PaymentApprovedPayload.class)).thenReturn(payload);
+
+        boolean handled = service.handle("product-group", "product-worker", 300L, approvedEvent);
+
+        assertTrue(handled);
+        verify(stockReservationPort).confirm("reservation-1");
+        verify(processedEventPort).markProcessed(eq("product-group"), eq("event-2"), any(Instant.class));
+        verify(outboxEventPort, never()).append(any());
+    }
+
+    /**
+     * 결제 실패 이벤트는 기존 예약을 해제하고 재고를 복구하는 흐름으로 가야 한다.
+     */
+    @Test
+    @DisplayName("PAYMENT_FAILED를 받으면 예약을 해제한다")
     void should_release_reservation_when_payment_failed_event_is_received() throws Exception {
         EventEnvelope failureEvent = paymentFailedEvent();
         PaymentFailedPayload payload = new PaymentFailedPayload(
@@ -135,13 +179,7 @@ class OrderPaymentSagaServiceTest {
                 "forced failure"
         );
 
-        when(processedEventPort.claim(
-                eq("product-group"),
-                eq(failureEvent),
-                eq("product-worker"),
-                any(Instant.class),
-                any(Instant.class)
-        )).thenReturn(true);
+        mockClaimSuccess(failureEvent);
         when(objectMapper.readValue(failureEvent.payloadJson(), PaymentFailedPayload.class)).thenReturn(payload);
 
         boolean handled = service.handle("product-group", "product-worker", 300L, failureEvent);
@@ -150,9 +188,36 @@ class OrderPaymentSagaServiceTest {
         verify(stockReservationPort).release("reservation-1");
         verify(processedEventPort).markProcessed(eq("product-group"), eq("event-3"), any(Instant.class));
         verify(outboxEventPort, never()).append(any());
-        verify(processedEventPort, never()).releaseClaim(any(), any(), any());
+        verify(processedEventPort, never()).releaseClaim(anyString(), anyString(), anyString());
     }
 
+    /**
+     * 공통 claim 성공 세팅을 만든다.
+     */
+    private void mockClaimSuccess(EventEnvelope envelope) {
+        when(processedEventPort.claim(
+                eq("product-group"),
+                eq(envelope),
+                eq("product-worker"),
+                any(Instant.class),
+                any(Instant.class)
+        )).thenReturn(true);
+    }
+
+    /**
+     * 재고 부족 비즈니스 예외를 모킹한다.
+     */
+    private void whenThrowStockShortageOnReserve() {
+        when(stockReservationPort.findActiveReservationId(1L)).thenReturn(Optional.empty());
+        org.mockito.Mockito.doThrow(new BusinessException(
+                PaymentErrorCode.PAYMENT_STOCK_SHORTAGE,
+                "재고가 부족합니다."
+        )).when(stockReservationPort).reserve(anyString(), eq(1L), any());
+    }
+
+    /**
+     * 재고 예약 요청 이벤트를 만든다.
+     */
     private EventEnvelope stockReservationRequestedEvent() {
         return new EventEnvelope(
                 "event-1",
@@ -170,6 +235,29 @@ class OrderPaymentSagaServiceTest {
         );
     }
 
+    /**
+     * 결제 승인 이벤트를 만든다.
+     */
+    private EventEnvelope paymentApprovedEvent() {
+        return new EventEnvelope(
+                "event-2",
+                EventTypes.PAYMENT_APPROVED,
+                "PAYMENT",
+                "1",
+                "saga-1",
+                "corr-1",
+                "event-1",
+                "payment-service",
+                "order.payment.saga.v1",
+                "1",
+                Instant.now(),
+                "{\"orderId\":1}"
+        );
+    }
+
+    /**
+     * 결제 실패 이벤트를 만든다.
+     */
     private EventEnvelope paymentFailedEvent() {
         return new EventEnvelope(
                 "event-3",
@@ -187,6 +275,49 @@ class OrderPaymentSagaServiceTest {
         );
     }
 
+    /**
+     * 예약 성공 후 발행할 STOCK_RESERVED 이벤트를 만든다.
+     */
+    private EventEnvelope stockReservedEvent() {
+        return new EventEnvelope(
+                "event-4",
+                EventTypes.STOCK_RESERVED,
+                "STOCK_RESERVATION",
+                "reservation-1",
+                "saga-1",
+                "corr-1",
+                "event-1",
+                "product-service",
+                "order.payment.saga.v1",
+                "1",
+                Instant.now(),
+                "{\"orderId\":1}"
+        );
+    }
+
+    /**
+     * 예약 실패 후 발행할 STOCK_RESERVATION_FAILED 이벤트를 만든다.
+     */
+    private EventEnvelope stockReservationFailedEvent() {
+        return new EventEnvelope(
+                "event-5",
+                EventTypes.STOCK_RESERVATION_FAILED,
+                "STOCK_RESERVATION",
+                "1",
+                "saga-1",
+                "corr-1",
+                "event-1",
+                "product-service",
+                "order.payment.saga.v1",
+                "1",
+                Instant.now(),
+                "{\"orderId\":1}"
+        );
+    }
+
+    /**
+     * 재고 예약 요청 payload를 만든다.
+     */
     private StockReservationRequestedPayload stockReservationRequestedPayload() {
         return new StockReservationRequestedPayload(
                 1L,
