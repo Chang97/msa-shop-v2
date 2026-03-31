@@ -4,9 +4,16 @@
       <div>
         <p class="eyebrow">Account</p>
         <h2>프로필</h2>
-        <p class="muted">인증 정보와 사용자 정보를 확인하고, 사용자 정보는 바로 수정할 수 있습니다.</p>
+        <p class="muted">
+          인증 정보와 사용자 정보를 확인하고, 필요한 경우 바로 수정하거나 비활성화할 수 있습니다.
+        </p>
       </div>
-      <button type="button" class="secondary" @click="logout">로그아웃</button>
+      <div class="page-header__actions">
+        <button type="button" class="secondary danger" :disabled="deactivating" @click="deactivateAccount">
+          {{ deactivating ? '탈퇴 처리 중...' : '탈퇴' }}
+        </button>
+        <button type="button" class="secondary" @click="logout">로그아웃</button>
+      </div>
     </div>
 
     <div v-if="!user.isAuthenticated" class="state-box muted">
@@ -44,7 +51,7 @@
               <dd>{{ authRoleText }}</dd>
             </div>
             <div>
-              <dt>접근 토큰 보유</dt>
+              <dt>액세스 토큰 보유</dt>
               <dd>{{ user.accessToken ? '예' : '아니오' }}</dd>
             </div>
           </dl>
@@ -85,7 +92,7 @@
 
             <div class="profile-form__actions">
               <button type="button" class="secondary" @click="resetForm">되돌리기</button>
-              <button type="submit" class="primary" :disabled="saving">
+              <button type="submit" class="primary" :disabled="saving || deactivating">
                 {{ saving ? '저장 중...' : '저장' }}
               </button>
             </div>
@@ -105,6 +112,7 @@ import { useUserStore } from '@/stores/user';
 const user = useUserStore();
 const router = useRouter();
 const saving = ref(false);
+const deactivating = ref(false);
 const infoMessage = ref('');
 const errorMessage = ref('');
 const authInfo = reactive({
@@ -143,10 +151,7 @@ const loadProfile = async () => {
   infoMessage.value = '';
   errorMessage.value = '';
   try {
-    const [, authResponse] = await Promise.all([
-      user.fetchSession(),
-      http.get('/auth/me')
-    ]);
+    const [, authResponse] = await Promise.all([user.fetchSession(), http.get('/auth/me')]);
     applyAuthInfo(authResponse?.data);
     syncForm();
   } catch (error) {
@@ -186,6 +191,28 @@ const saveProfile = async () => {
   }
 };
 
+const deactivateAccount = async () => {
+  const confirmed = window.confirm('계정을 비활성화하시겠습니까? 처리 후 로그아웃됩니다.');
+  if (!confirmed) {
+    return;
+  }
+
+  deactivating.value = true;
+  infoMessage.value = '';
+  errorMessage.value = '';
+
+  try {
+    await http.patch('/users/me/deactivate');
+    await user.logout();
+    router.replace('/login');
+  } catch (error) {
+    const parsed = toError(error);
+    errorMessage.value = parsed.message || '계정 비활성화에 실패했습니다.';
+  } finally {
+    deactivating.value = false;
+  }
+};
+
 const logout = async () => {
   await user.logout();
   router.push('/login');
@@ -196,6 +223,12 @@ const logout = async () => {
 .profile-page h2,
 .profile-page h3 {
   margin: 0;
+}
+
+.page-header__actions {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
 }
 
 .profile-grid {
@@ -271,5 +304,14 @@ const logout = async () => {
   justify-content: flex-end;
   gap: 0.75rem;
   margin-top: 0.25rem;
+}
+
+.danger {
+  border-color: #ef4444;
+  color: #b91c1c;
+}
+
+.danger:hover:not(:disabled) {
+  background: #fef2f2;
 }
 </style>

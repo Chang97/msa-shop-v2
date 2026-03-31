@@ -63,13 +63,36 @@ const clearClientSession = async () => {
 
 export function toError(err) {
   const res = err?.response;
-  if (!res) return { status: 0, code: 'NETWORK', message: '네트워크 오류' };
-  const body = res.data || {};
-  return {
-    status: res.status,
-    code: body.code || body.error || 'ERROR',
-    message: body.message || res.statusText
-  };
+  if (res) {
+    const body = res.data || {};
+    const message =
+      (typeof body === 'string' && body.trim()) ||
+      body.message ||
+      body.error_description ||
+      body.error ||
+      res.statusText ||
+      '요청 처리 중 오류가 발생했습니다.';
+
+    return {
+      status: res.status,
+      code: body.code || body.error || 'ERROR',
+      message
+    };
+  }
+
+  if (err && typeof err === 'object' && 'status' in err && 'message' in err) {
+    return {
+      status: err.status ?? 0,
+      code: err.code || 'ERROR',
+      message: err.message || '요청 처리 중 오류가 발생했습니다.'
+    };
+  }
+
+  if (err?.code === 'ECONNABORTED') {
+    return { status: 0, code: 'TIMEOUT', message: '요청 시간이 초과되었습니다.' };
+  }
+
+  return { status: 0, code: 'NETWORK', message: '네트워크 오류가 발생했습니다.' };
 }
 
 http.interceptors.response.use(
@@ -82,7 +105,7 @@ http.interceptors.response.use(
     if ((status === 401 || status === 403) && shouldRetryWithRefresh(originalConfig)) {
       originalConfig._retry = true;
       try {
-        console.warn('[auth] 401 detected, trying refresh…', { url: originalConfig.url });
+        console.warn('[auth] 401 detected, trying refresh', { url: originalConfig.url });
         const newToken = await refreshAccessToken();
         if (newToken) {
           originalConfig.headers = {

@@ -19,8 +19,9 @@ export const useProductStore = defineStore('products', {
         this.totalElements = this.items.length;
         return this.items;
       } catch (error) {
-        this.error = error?.message || '상품 조회 실패';
-        throw toError(error);
+        const parsed = toError(error);
+        this.error = parsed.message || '상품 조회 실패';
+        throw parsed;
       } finally {
         this.loading = false;
       }
@@ -36,8 +37,9 @@ export const useProductStore = defineStore('products', {
         this.current = mapDetail(data);
         return this.current;
       } catch (error) {
-        this.error = error?.message || '상품 조회 실패';
-        throw toError(error);
+        const parsed = toError(error);
+        this.error = parsed.message || '상품 조회 실패';
+        throw parsed;
       } finally {
         this.loading = false;
       }
@@ -53,8 +55,9 @@ export const useProductStore = defineStore('products', {
         });
         return data;
       } catch (error) {
-        this.error = error?.message || '상품 생성 실패';
-        throw toError(error);
+        const parsed = toError(error);
+        this.error = parsed.message || '상품 생성 실패';
+        throw parsed;
       } finally {
         this.loading = false;
       }
