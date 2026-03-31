@@ -78,9 +78,9 @@ public class User {
      * Updates only the provided profile fields and keeps existing values for null inputs.
      */
     public void updateProfile(String userName, String empNo, String pstnName, String tel) {
-        if (userName != null) this.userName = userName;
-        if (empNo != null) this.empNo = empNo;
-        if (pstnName != null) this.pstnName = pstnName;
-        if (tel != null) this.tel = tel;
+        this.userName = userName;
+        this.empNo = empNo;
+        this.pstnName = pstnName;
+        this.tel = tel;
     }
 }

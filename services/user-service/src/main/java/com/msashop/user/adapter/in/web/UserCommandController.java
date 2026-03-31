@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -42,7 +43,7 @@ public class UserCommandController {
         return ResponseEntity.noContent().build();
     }
 
-    @PatchMapping("/me")
+    @PutMapping("/me")
     public ResponseEntity<Void> updateMe(
             @AuthenticationPrincipal CurrentUser currentUser,
             @Valid @RequestBody UserMeUpdateRequest request

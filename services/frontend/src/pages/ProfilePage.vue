@@ -175,8 +175,8 @@ const saveProfile = async () => {
   infoMessage.value = '';
   errorMessage.value = '';
   try {
-    await http.patch('/users/me', {
-      userName: form.userName || null,
+    await http.put('/users/me', {
+      userName: form.userName?.trim() || null,
       empNo: form.empNo || null,
       pstnName: form.pstnName || null,
       tel: form.tel || null

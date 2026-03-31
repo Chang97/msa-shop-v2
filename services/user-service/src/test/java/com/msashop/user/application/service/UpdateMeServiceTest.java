@@ -67,7 +67,7 @@ class UpdateMeServiceTest {
     }
 
     @Test
-    void should_update_profile_and_keep_existing_values_for_null_fields() {
+    void should_replace_profile_and_allow_null_for_optional_fields() {
         // 활성 사용자면 전달된 필드만 수정하고 null 필드는 기존 값을 유지한 채 저장한다.
         when(loadUserPort.findByAuthUserId(20L)).thenReturn(Optional.of(user(true)));
 
@@ -78,9 +78,9 @@ class UpdateMeServiceTest {
 
         User saved = captor.getValue();
         assertEquals("김철수", saved.getUserName());
-        assertEquals("EMP-001", saved.getEmpNo());
+        assertEquals(null, saved.getEmpNo());
         assertEquals("플랫폼", saved.getPstnName());
-        assertEquals("010-1234-5678", saved.getTel());
+        assertEquals(null, saved.getTel());
     }
 
     /**
