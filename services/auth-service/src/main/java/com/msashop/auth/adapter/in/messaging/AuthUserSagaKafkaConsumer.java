@@ -65,6 +65,7 @@ public class AuthUserSagaKafkaConsumer {
                 consumerGroup,
                 eventType -> EventTypes.USER_PROFILE_CREATED.equals(eventType)
                         || EventTypes.USER_PROFILE_CREATION_FAILED.equals(eventType)
+                        || EventTypes.USER_DEACTIVATED.equals(eventType)
         );
     }
 }

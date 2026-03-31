@@ -5,6 +5,7 @@ import com.msashop.auth.application.port.out.CredentialPort;
 import com.msashop.auth.application.port.out.ProcessedEventPort;
 import com.msashop.common.event.EventEnvelope;
 import com.msashop.common.event.EventTypes;
+import com.msashop.common.event.payload.UserDeactivatedPayload;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -69,11 +70,57 @@ class AuthUserSagaCompletionServiceTest {
 
         assertTrue(handled);
         verify(credentialPort, never()).enable(any(Long.class));
+        verify(credentialPort, never()).disable(any(Long.class));
         verify(processedEventPort).markProcessed(
                 eq("auth-service-auth-user-saga"),
                 eq("event-1"),
                 any(Instant.class)
         );
         verify(processedEventPort, never()).releaseClaim(any(), any(), any());
+    }
+
+    @Test
+    void should_disable_credential_when_user_deactivated_event_is_received() throws Exception {
+        EventEnvelope deactivatedEvent = new EventEnvelope(
+                "event-2",
+                EventTypes.USER_DEACTIVATED,
+                "USER_PROFILE",
+                "1",
+                "event-2",
+                "event-2",
+                "event-2",
+                "user-service",
+                "auth.user.saga.v1",
+                "1",
+                Instant.now(),
+                "{\"authUserId\":1,\"userId\":10}"
+        );
+
+        when(processedEventPort.claim(
+                eq("auth-service-auth-user-saga"),
+                eq(deactivatedEvent),
+                eq("auth-worker"),
+                any(Instant.class),
+                any(Instant.class)
+        )).thenReturn(true);
+        when(objectMapper.readValue(
+                deactivatedEvent.payloadJson(),
+                UserDeactivatedPayload.class
+        )).thenReturn(new UserDeactivatedPayload(1L, 10L));
+
+        boolean handled = service.handle(
+                "auth-service-auth-user-saga",
+                "auth-worker",
+                300L,
+                deactivatedEvent
+        );
+
+        assertTrue(handled);
+        verify(credentialPort).disable(1L);
+        verify(processedEventPort).markProcessed(
+                eq("auth-service-auth-user-saga"),
+                eq("event-2"),
+                any(Instant.class)
+        );
     }
 }

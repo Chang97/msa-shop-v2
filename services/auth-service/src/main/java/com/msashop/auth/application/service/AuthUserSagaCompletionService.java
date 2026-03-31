@@ -9,6 +9,7 @@ import com.msashop.common.event.EventEnvelope;
 import com.msashop.common.event.EventTypes;
 import com.msashop.common.event.InvalidSagaMessageException;
 import com.msashop.common.event.SagaClaimExecutor;
+import com.msashop.common.event.payload.UserDeactivatedPayload;
 import com.msashop.common.event.payload.UserProfileCreatedPayload;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -59,6 +60,13 @@ public class AuthUserSagaCompletionService implements HandleAuthUserSagaCompleti
             return true;
         }
 
+        if (EventTypes.USER_DEACTIVATED.equals(envelope.eventType())) {
+            UserDeactivatedPayload payload = deserializeDeactivatedPayload(consumerGroup, envelope);
+            credentialPort.disable(payload.authUserId());
+            processedEventPort.markProcessed(consumerGroup, envelope.eventId(), Instant.now());
+            return true;
+        }
+
         return true;
     }
 
@@ -70,6 +78,19 @@ public class AuthUserSagaCompletionService implements HandleAuthUserSagaCompleti
             throw new InvalidSagaMessageException(
                     "USER_PROFILE_CREATED_PAYLOAD_DESERIALIZATION_FAILED",
                     "UserProfileCreated payload 역직렬화에 실패했습니다.",
+                    e
+            );
+        }
+    }
+
+    private UserDeactivatedPayload deserializeDeactivatedPayload(String consumerGroup, EventEnvelope envelope) {
+        try {
+            return objectMapper.readValue(envelope.payloadJson(), UserDeactivatedPayload.class);
+        } catch (JsonProcessingException e) {
+            processedEventPort.markProcessed(consumerGroup, envelope.eventId(), Instant.now());
+            throw new InvalidSagaMessageException(
+                    "USER_DEACTIVATED_PAYLOAD_DESERIALIZATION_FAILED",
+                    "UserDeactivated payload 역직렬화에 실패했습니다.",
                     e
             );
         }
