@@ -51,7 +51,6 @@ class DeactivateMeServiceTest {
 
     @Test
     void should_throw_not_found_when_user_is_missing() {
-        // 비활성화 대상 사용자가 없으면 outbox 적재 없이 COMMON_NOT_FOUND로 종료한다.
         when(loadUserPort.findByAuthUserId(20L)).thenReturn(Optional.empty());
 
         BusinessException ex = assertThrows(BusinessException.class, () -> service.deactivateMe(20L));
@@ -63,8 +62,7 @@ class DeactivateMeServiceTest {
 
     @Test
     void should_deactivate_user_and_append_user_deactivated_event_when_user_exists() {
-        // 사용자 프로필을 비활성화하고 auth-service가 처리할 이벤트를 outbox에 적재한다.
-        User user = user();
+        User user = activeUser();
         EventEnvelope event = new EventEnvelope(
                 "event-1",
                 "UserDeactivated",
@@ -91,16 +89,44 @@ class DeactivateMeServiceTest {
         inOrder.verify(outboxEventPort).append(event);
     }
 
-    // 현재 로그인한 사용자에 대응하는 도메인 객체를 구성한다.
-    private User user() {
+    @Test
+    void should_do_nothing_when_user_is_already_deactivated() {
+        User user = inactiveUser();
+
+        when(loadUserPort.findByAuthUserId(20L)).thenReturn(Optional.of(user));
+
+        service.deactivateMe(20L);
+
+        verify(saveUserPort, never()).deactivate(any());
+        verify(eventFactory, never()).userDeactivated(any(), any());
+        verify(outboxEventPort, never()).append(any());
+    }
+
+    private User activeUser() {
         return new User(
                 10L,
                 20L,
-                "홍길동",
+                "Hong Gil Dong",
                 "EMP-001",
-                "백엔드",
+                "Platform Team",
                 "010-1234-5678",
                 true,
+                Instant.parse("2026-03-30T00:00:00Z"),
+                1L,
+                Instant.parse("2026-03-31T00:00:00Z"),
+                1L
+        );
+    }
+
+    private User inactiveUser() {
+        return new User(
+                10L,
+                20L,
+                "Hong Gil Dong",
+                "EMP-001",
+                "Platform Team",
+                "010-1234-5678",
+                false,
                 Instant.parse("2026-03-30T00:00:00Z"),
                 1L,
                 Instant.parse("2026-03-31T00:00:00Z"),

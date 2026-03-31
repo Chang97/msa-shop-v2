@@ -30,6 +30,10 @@ public class DeactivateMeService implements DeactivateMeUseCase {
                         "사용자를 찾을 수 없습니다. userId=" + userId
                 ));
 
+        if (!user.isUseYn()) {
+            return;
+        }
+
         saveUserPort.deactivate(user);
         outboxEventPort.append(eventFactory.userDeactivated(user.getAuthUserId(), user.getUserId()));
     }

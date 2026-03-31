@@ -4,7 +4,7 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * User aggregate for command-side operations.
+ * 사용자 프로필 command/query 처리를 위한 도메인 aggregate.
  */
 public class User {
 
@@ -27,7 +27,7 @@ public class User {
     private Long updatedBy;
 
     /**
-     * Rehydrates the aggregate with the minimum state needed for user profile commands and queries.
+     * 사용자 프로필 조회/수정/비활성화에 필요한 상태로 aggregate를 복원한다.
      */
     public User(
             Long userId,
@@ -68,14 +68,14 @@ public class User {
     public Long getUpdatedBy() { return updatedBy; }
 
     /**
-     * Deactivates the user profile. This operation is idempotent.
+     * 사용자 프로필을 비활성화한다. 이미 비활성화된 경우에도 동일 상태를 유지한다.
      */
     public void deactivate() {
         this.useYn = false;
     }
 
     /**
-     * Updates only the provided profile fields and keeps existing values for null inputs.
+     * 전달된 폼 값으로 현재 프로필 값을 전체 반영한다.
      */
     public void updateProfile(String userName, String empNo, String pstnName, String tel) {
         this.userName = userName;

@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Component
 @RequiredArgsConstructor
@@ -35,6 +36,9 @@ public class KafkaOutboxRelay {
     @Value("${app.kafka.producer.retry-delay-seconds:30}")
     private long retryDelaySeconds;
 
+    @Value("${app.kafka.producer.send-timeout-seconds:5}")
+    private long sendTimeoutSeconds;
+
     @Scheduled(fixedDelayString = "${app.kafka.producer.fixed-delay-ms:3000}")
     public void relay() {
         Instant now = Instant.now();
@@ -43,7 +47,8 @@ public class KafkaOutboxRelay {
 
         for (OutboxEventJpaEntity event : events) {
             try {
-                kafkaTemplate.send(event.getTopic(), event.getEventKey(), event.getPayloadJson()).get();
+                kafkaTemplate.send(event.getTopic(), event.getEventKey(), event.getPayloadJson())
+                        .get(sendTimeoutSeconds, TimeUnit.SECONDS);
                 outboxEventPort.markPublished(event.getOutboxEventId(), Instant.now());
             } catch (Exception e) {
                 outboxEventPort.handlePublishFailure(
