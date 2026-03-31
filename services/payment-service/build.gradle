@@ -34,7 +34,7 @@ dependencies {
 	// 유틸리티
 	implementation 'com.google.guava:guava:32.1.2-jre'
 	implementation "com.fasterxml.jackson.core:jackson-databind"
-	implementation 'org.apache.commons:commons-lang3:3.14.0'
+	implementation 'org.apache.commons:commons-lang3:3.18.0'
 	implementation 'commons-io:commons-io:2.15.1'
 
 	// Lombok (중복 제거 버전)
@@ -48,7 +48,6 @@ dependencies {
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation 'org.testcontainers:junit-jupiter:1.21.4'
 	testImplementation 'org.testcontainers:postgresql:1.21.4'
-	testImplementation 'com.h2database:h2'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 
 	// 빌드
