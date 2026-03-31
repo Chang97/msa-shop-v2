@@ -29,6 +29,7 @@ public class OrderPaymentSagaService implements HandleOrderPaymentSagaUseCase {
     private final ObjectMapper objectMapper;
     private final ProcessedEventPort processedEventPort;
     private final StockReservationPort stockReservationPort;
+    private final StockReservationLocalTxService stockReservationLocalTxService;
     private final OutboxEventPort outboxEventPort;
     private final ProductSagaEventFactory productSagaEventFactory;
 
@@ -68,10 +69,8 @@ public class OrderPaymentSagaService implements HandleOrderPaymentSagaUseCase {
         try {
             String reservationId = stockReservationPort.findActiveReservationId(payload.orderId())
                     .orElseGet(() -> {
-                        // 예약 id는 product-service가 발급한다.
-                        // 재고 예약/확정/해제의 진실 소스가 product-service이기 때문이다.
                         String newReservationId = UUID.randomUUID().toString();
-                        stockReservationPort.reserve(newReservationId, payload.orderId(), payload.items());
+                        stockReservationLocalTxService.reserve(newReservationId, payload.orderId(), payload.items());
                         return newReservationId;
                     });
 
@@ -95,9 +94,6 @@ public class OrderPaymentSagaService implements HandleOrderPaymentSagaUseCase {
 
     private boolean handlePaymentApproved(String consumerGroup, EventEnvelope envelope) {
         PaymentApprovedPayload payload = deserializeApprovedPayload(consumerGroup, envelope);
-
-        // 재고는 예약 시점에 이미 감소했다.
-        // 결제 승인 시점에는 그 예약을 최종 확정만 한다.
         stockReservationPort.confirm(payload.reservationId());
         processedEventPort.markProcessed(consumerGroup, envelope.eventId(), Instant.now());
         return true;
@@ -105,8 +101,6 @@ public class OrderPaymentSagaService implements HandleOrderPaymentSagaUseCase {
 
     private boolean handlePaymentFailed(String consumerGroup, EventEnvelope envelope) {
         PaymentFailedPayload payload = deserializeFailedPayload(consumerGroup, envelope);
-
-        // 결제 실패 시에는 예약을 해제해서 판매 가능한 재고를 복구해야 한다.
         stockReservationPort.release(payload.reservationId());
         processedEventPort.markProcessed(consumerGroup, envelope.eventId(), Instant.now());
         return true;

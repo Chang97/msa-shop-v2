@@ -163,6 +163,7 @@ table td {
 
 .status-chip.created { background: #dbeafe; color: #1e3a8a; }
 .status-chip.pending_payment { background: #fef3c7; color: #92400e; }
+.status-chip.payment_failed { background: #fee2e2; color: #b91c1c; }
 .status-chip.paid { background: #dcfce7; color: #166534; }
 .status-chip.fulfilled { background: #ede9fe; color: #5b21b6; }
 .status-chip.cancelled { background: #fee2e2; color: #991b1b; }

@@ -32,24 +32,26 @@ public class Order {
     private final Instant createdAt;
     private final Instant updatedAt;
 
-    private Order(Long orderId,
-                  String orderNumber,
-                  Long userId,
-                  OrderStatus status,
-                  String currency,
-                  BigDecimal subtotalAmount,
-                  BigDecimal discountAmount,
-                  BigDecimal shippingFee,
-                  BigDecimal totalAmount,
-                  String receiverName,
-                  String receiverPhone,
-                  String shippingPostcode,
-                  String shippingAddress1,
-                  String shippingAddress2,
-                  String memo,
-                  List<OrderItem> items,
-                  Instant createdAt,
-                  Instant updatedAt) {
+    private Order(
+            Long orderId,
+            String orderNumber,
+            Long userId,
+            OrderStatus status,
+            String currency,
+            BigDecimal subtotalAmount,
+            BigDecimal discountAmount,
+            BigDecimal shippingFee,
+            BigDecimal totalAmount,
+            String receiverName,
+            String receiverPhone,
+            String shippingPostcode,
+            String shippingAddress1,
+            String shippingAddress2,
+            String memo,
+            List<OrderItem> items,
+            Instant createdAt,
+            Instant updatedAt
+    ) {
         this.orderId = orderId;
         this.orderNumber = Objects.requireNonNull(orderNumber, "orderNumber");
         this.userId = Objects.requireNonNull(userId, "userId");
@@ -70,28 +72,32 @@ public class Order {
         this.updatedAt = updatedAt;
     }
 
-    public static Order create(String orderNumber,
-                               Long userId,
-                               String currency,
-                               BigDecimal discountAmount,
-                               BigDecimal shippingFee,
-                               String receiverName,
-                               String receiverPhone,
-                               String shippingPostcode,
-                               String shippingAddress1,
-                               String shippingAddress2,
-                               String memo,
-                               List<OrderItem> items) {
+    public static Order create(
+            String orderNumber,
+            Long userId,
+            String currency,
+            BigDecimal discountAmount,
+            BigDecimal shippingFee,
+            String receiverName,
+            String receiverPhone,
+            String shippingPostcode,
+            String shippingAddress1,
+            String shippingAddress2,
+            String memo,
+            List<OrderItem> items
+    ) {
         Objects.requireNonNull(items, "items");
         if (items.isEmpty()) {
             throw new IllegalArgumentException("주문 상품은 1개 이상이어야 합니다.");
         }
+
         BigDecimal subtotal = items.stream()
                 .map(OrderItem::getLineAmount)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal discount = discountAmount == null ? BigDecimal.ZERO : discountAmount;
         BigDecimal shipping = shippingFee == null ? BigDecimal.ZERO : shippingFee;
         BigDecimal total = subtotal.subtract(discount).add(shipping);
+
         return new Order(
                 null,
                 orderNumber,
@@ -114,34 +120,55 @@ public class Order {
         );
     }
 
-    public static Order rehydrate(Long orderId,
-                                  String orderNumber,
-                                  Long userId,
-                                  OrderStatus status,
-                                  String currency,
-                                  BigDecimal subtotalAmount,
-                                  BigDecimal discountAmount,
-                                  BigDecimal shippingFee,
-                                  BigDecimal totalAmount,
-                                  String receiverName,
-                                  String receiverPhone,
-                                  String shippingPostcode,
-                                  String shippingAddress1,
-                                  String shippingAddress2,
-                                  String memo,
-                                  List<OrderItem> items,
-                                  Instant createdAt,
-                                  Instant updatedAt) {
-        return new Order(orderId, orderNumber, userId, status, currency, subtotalAmount, discountAmount, shippingFee,
-                totalAmount, receiverName, receiverPhone, shippingPostcode, shippingAddress1, shippingAddress2,
-                memo, items, createdAt, updatedAt);
+    public static Order rehydrate(
+            Long orderId,
+            String orderNumber,
+            Long userId,
+            OrderStatus status,
+            String currency,
+            BigDecimal subtotalAmount,
+            BigDecimal discountAmount,
+            BigDecimal shippingFee,
+            BigDecimal totalAmount,
+            String receiverName,
+            String receiverPhone,
+            String shippingPostcode,
+            String shippingAddress1,
+            String shippingAddress2,
+            String memo,
+            List<OrderItem> items,
+            Instant createdAt,
+            Instant updatedAt
+    ) {
+        return new Order(
+                orderId,
+                orderNumber,
+                userId,
+                status,
+                currency,
+                subtotalAmount,
+                discountAmount,
+                shippingFee,
+                totalAmount,
+                receiverName,
+                receiverPhone,
+                shippingPostcode,
+                shippingAddress1,
+                shippingAddress2,
+                memo,
+                items,
+                createdAt,
+                updatedAt
+        );
     }
 
     public void cancel() {
         switch (this.status) {
-            case CANCELLED -> { return; }
+            case CANCELLED -> {
+                return;
+            }
             case PAID -> throw new IllegalStateException("이미 결제가 완료된 주문입니다.");
-            case CREATED, PENDING_PAYMENT -> this.status = OrderStatus.CANCELLED;
+            case CREATED, PENDING_PAYMENT, PAYMENT_FAILED, PAYMENT_EXPIRED -> this.status = OrderStatus.CANCELLED;
         }
     }
 
@@ -149,17 +176,45 @@ public class Order {
         switch (this.status) {
             case PAID -> throw new IllegalStateException("이미 결제가 완료된 주문입니다.");
             case CANCELLED -> throw new IllegalStateException("이미 취소된 주문입니다.");
-            case PENDING_PAYMENT -> { return; } // idempotent
-            case CREATED -> this.status = OrderStatus.PENDING_PAYMENT;
+            case PENDING_PAYMENT -> {
+                return;
+            }
+            case CREATED, PAYMENT_FAILED, PAYMENT_EXPIRED -> this.status = OrderStatus.PENDING_PAYMENT;
         }
     }
 
     public void markPaid() {
         switch (this.status) {
-            case PAID -> { return; } // idempotent
+            case PAID -> {
+                return;
+            }
             case CANCELLED -> throw new IllegalStateException("이미 취소된 주문입니다.");
-            case CREATED -> throw new IllegalStateException("결제가 시작되지 않은 주문입니다.");
-            case PENDING_PAYMENT -> this.status = OrderStatus.PAID;
+            case CREATED, PAYMENT_FAILED -> throw new IllegalStateException("결제가 시작되지 않은 주문입니다.");
+            case PENDING_PAYMENT, PAYMENT_EXPIRED -> this.status = OrderStatus.PAID;
+        }
+    }
+
+    public void markPaymentFailed() {
+        switch (this.status) {
+            case PAYMENT_FAILED -> {
+                return;
+            }
+            case PAID -> throw new IllegalStateException("이미 결제가 완료된 주문입니다.");
+            case CANCELLED -> throw new IllegalStateException("이미 취소된 주문입니다.");
+            case CREATED -> throw new IllegalStateException("결제가 진행 중인 주문이 아닙니다.");
+            case PENDING_PAYMENT, PAYMENT_EXPIRED -> this.status = OrderStatus.PAYMENT_FAILED;
+        }
+    }
+
+    public void markPaymentExpired() {
+        switch (this.status) {
+            case PAYMENT_EXPIRED -> {
+                return;
+            }
+            case PAID -> throw new IllegalStateException("이미 결제가 완료된 주문입니다.");
+            case CANCELLED -> throw new IllegalStateException("이미 취소된 주문입니다.");
+            case CREATED, PAYMENT_FAILED -> throw new IllegalStateException("결제가 진행 중인 주문이 아닙니다.");
+            case PENDING_PAYMENT -> this.status = OrderStatus.PAYMENT_EXPIRED;
         }
     }
 

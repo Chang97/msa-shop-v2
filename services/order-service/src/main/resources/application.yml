@@ -45,6 +45,12 @@ app:
   idempotency:
     ttl-seconds: 300
     key-prefix: order:idempotency
+  order:
+    payment-expiration:
+      enabled: true
+      timeout-seconds: 900
+      batch-size: 50
+      fixed-delay-ms: 10000
   kafka:
     topics:
       order-payment-saga: order.payment.saga.v1

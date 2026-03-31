@@ -5,3 +5,10 @@ logging:
   level:
     org.flywaydb: DEBUG
     org.springframework.security: DEBUG
+
+app:
+  kafka:
+    consumers:
+      order-payment-saga-enabled: true
+    producer:
+      relay-enabled: true

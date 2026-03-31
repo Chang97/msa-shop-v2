@@ -1,0 +1,21 @@
+ALTER TABLE orders
+    DROP CONSTRAINT IF EXISTS chk_orders_status;
+
+ALTER TABLE orders
+    DROP CONSTRAINT IF EXISTS orders_status_check;
+
+ALTER TABLE orders
+    ADD CONSTRAINT chk_orders_status CHECK (
+        status IN ('CREATED', 'PENDING_PAYMENT', 'PAYMENT_FAILED', 'PAYMENT_EXPIRED', 'PAID', 'CANCELLED')
+    );
+
+ALTER TABLE order_status_history
+    DROP CONSTRAINT IF EXISTS chk_status_hist_to;
+
+ALTER TABLE order_status_history
+    DROP CONSTRAINT IF EXISTS order_status_history_to_status_check;
+
+ALTER TABLE order_status_history
+    ADD CONSTRAINT chk_status_hist_to CHECK (
+        to_status IN ('CREATED', 'PENDING_PAYMENT', 'PAYMENT_FAILED', 'PAYMENT_EXPIRED', 'PAID', 'CANCELLED')
+    );

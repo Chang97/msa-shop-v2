@@ -82,7 +82,7 @@ services:
         MODULE_DIR: services/auth-service
     container_name: msashop-auth-service
     environment:
-      SPRING_PROFILES_ACTIVE: local,saga-e2e
+      SPRING_PROFILES_ACTIVE: local
       INTERNAL_SERVICE_SECRET: local-internal-secret
       USER_SERVICE_BASE_URL: http://user-service:8085
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
@@ -108,7 +108,7 @@ services:
         MODULE_DIR: services/product-service
     container_name: msashop-product-service
     environment:
-      SPRING_PROFILES_ACTIVE: local,saga-e2e
+      SPRING_PROFILES_ACTIVE: local
       INTERNAL_SERVICE_SECRET: local-internal-secret
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
       PRODUCT_DB_URL: jdbc:postgresql://postgres:5432/product_db
@@ -133,7 +133,7 @@ services:
         MODULE_DIR: services/order-service
     container_name: msashop-order-service
     environment:
-      SPRING_PROFILES_ACTIVE: local,saga-e2e
+      SPRING_PROFILES_ACTIVE: local
       INTERNAL_SERVICE_SECRET: local-internal-secret
       PRODUCT_BASE_URL: http://product-service:8082/internal/products
       PAYMENT_BASE_URL: http://payment-service:8084
@@ -160,7 +160,7 @@ services:
         MODULE_DIR: services/payment-service
     container_name: msashop-payment-service
     environment:
-      SPRING_PROFILES_ACTIVE: local,saga-e2e
+      SPRING_PROFILES_ACTIVE: local
       INTERNAL_SERVICE_SECRET: local-internal-secret
       ORDER_BASE_URL: http://order-service:8083
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092
@@ -184,7 +184,7 @@ services:
         MODULE_DIR: services/user-service
     container_name: msashop-user-service
     environment:
-      SPRING_PROFILES_ACTIVE: local,saga-e2e
+      SPRING_PROFILES_ACTIVE: local
       INTERNAL_SERVICE_SECRET: local-internal-secret
       AUTH_SERVICE_BASE_URL: http://auth-service:8081
       KAFKA_BOOTSTRAP_SERVERS: kafka:29092

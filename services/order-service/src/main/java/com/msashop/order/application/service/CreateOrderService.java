@@ -1,5 +1,7 @@
 package com.msashop.order.application.service;
 
+import com.msashop.common.web.exception.BusinessException;
+import com.msashop.common.web.exception.OrderErrorCode;
 import com.msashop.order.application.mapper.OrderCommandMapper;
 import com.msashop.order.application.port.in.CreateOrderUseCase;
 import com.msashop.order.application.port.in.model.CreateOrderCommand;
@@ -8,8 +10,6 @@ import com.msashop.order.application.port.out.OrderNumberPort;
 import com.msashop.order.application.port.out.SaveOrderPort;
 import com.msashop.order.application.port.out.SaveOrderStatusHistoryPort;
 import com.msashop.order.application.port.out.model.ProductRow;
-import com.msashop.common.web.exception.BusinessException;
-import com.msashop.common.web.exception.CommonErrorCode;
 import com.msashop.order.domain.model.Order;
 import com.msashop.order.domain.model.OrderStatus;
 import lombok.RequiredArgsConstructor;
@@ -53,7 +53,7 @@ public class CreateOrderService implements CreateOrderUseCase {
         Map<Long, ProductRow> map = products.stream()
                 .collect(Collectors.toMap(ProductRow::productId, p -> p));
         if (map.size() != ids.size()) {
-            throw new BusinessException(CommonErrorCode.COMMON_NOT_FOUND, "일부 상품을 찾을 수 없습니다.");
+            throw new BusinessException(OrderErrorCode.ORDER_PRODUCT_NOT_FOUND);
         }
         return map;
     }
@@ -64,16 +64,13 @@ public class CreateOrderService implements CreateOrderUseCase {
         requestedQty.forEach((productId, qty) -> {
             ProductRow product = productsById.get(productId);
             if (product == null) {
-                throw new BusinessException(CommonErrorCode.COMMON_NOT_FOUND, "상품을 찾을 수 없습니다. productId: " + productId);
+                throw new BusinessException(OrderErrorCode.ORDER_PRODUCT_NOT_FOUND, "상품을 찾을 수 없습니다. productId: " + productId);
             }
             if (product.useYn() == null || !product.useYn()) {
-                throw new BusinessException(CommonErrorCode.COMMON_CONFLICT, "비활성화된 상품입니다. productId: " + product.productId());
+                throw new BusinessException(OrderErrorCode.ORDER_PRODUCT_INACTIVE, "비활성화된 상품입니다. productId: " + product.productId());
             }
             if (!STATUS_ON_SALE.equals(product.status())) {
-                throw new BusinessException(CommonErrorCode.COMMON_CONFLICT, "판매 중인 상품이 아닙니다. productId: " + product.productId());
-            }
-            if (product.stock() == null || product.stock() < qty) {
-                throw new BusinessException(CommonErrorCode.COMMON_CONFLICT, "재고가 부족합니다. productId: " + product.productId());
+                throw new BusinessException(OrderErrorCode.ORDER_PRODUCT_NOT_ON_SALE, "판매 중인 상품이 아닙니다. productId: " + product.productId());
             }
         });
     }

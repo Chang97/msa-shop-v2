@@ -1,5 +1,7 @@
 package com.msashop.order.adapter.out.persistence.adapter;
 
+import com.msashop.common.web.exception.BusinessException;
+import com.msashop.common.web.exception.OrderErrorCode;
 import com.msashop.order.adapter.out.persistence.entity.OrderEntity;
 import com.msashop.order.adapter.out.persistence.entity.OrderStatusHistoryEntity;
 import com.msashop.order.adapter.out.persistence.mapper.OrderEntityMapper;
@@ -13,12 +15,11 @@ import com.msashop.order.application.port.out.SaveOrderPort;
 import com.msashop.order.application.port.out.SaveOrderStatusHistoryPort;
 import com.msashop.order.domain.model.Order;
 import com.msashop.order.domain.model.OrderStatus;
-import com.msashop.common.web.exception.BusinessException;
-import com.msashop.common.web.exception.CommonErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.List;
 
 @Component
@@ -42,7 +43,7 @@ public class OrderPersistenceAdapter implements SaveOrderPort, LoadOrderPort, Or
     @Transactional(readOnly = true)
     public Order loadOrder(Long orderId) {
         OrderEntity entity = orderQueryJpaRepository.findWithItemsById(orderId)
-                .orElseThrow(() -> new BusinessException(CommonErrorCode.COMMON_NOT_FOUND, "주문을 찾을 수 없습니다: " + orderId));
+                .orElseThrow(() -> new BusinessException(OrderErrorCode.ORDER_NOT_FOUND, "주문을 찾을 수 없습니다: " + orderId));
         return OrderEntityMapper.toDomain(entity);
     }
 
@@ -52,6 +53,15 @@ public class OrderPersistenceAdapter implements SaveOrderPort, LoadOrderPort, Or
         return orderQueryJpaRepository.findAllByUserIdOrderByCreatedAtDesc(userId).stream()
                 .map(OrderEntityMapper::toDomain)
                 .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Long> loadPendingPaymentOrderIdsBefore(Instant threshold, int limit) {
+        return orderQueryJpaRepository.findPendingPaymentOrderIdsBefore(
+                threshold,
+                org.springframework.data.domain.PageRequest.of(0, limit)
+        );
     }
 
     @Override

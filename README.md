@@ -318,14 +318,14 @@ docker compose -f infra/docker-compose.yml up -d
 
 ```bash
 ./gradlew :gateway:bootRun --args='--spring.profiles.active=local'
-./gradlew :auth-service:bootRun --args='--spring.profiles.active=local,saga-e2e'
-./gradlew :user-service:bootRun --args='--spring.profiles.active=local,saga-e2e'
-./gradlew :product-service:bootRun --args='--spring.profiles.active=local,saga-e2e'
-./gradlew :order-service:bootRun --args='--spring.profiles.active=local,saga-e2e'
-./gradlew :payment-service:bootRun --args='--spring.profiles.active=local,saga-e2e'
+./gradlew :auth-service:bootRun --args='--spring.profiles.active=local'
+./gradlew :user-service:bootRun --args='--spring.profiles.active=local'
+./gradlew :product-service:bootRun --args='--spring.profiles.active=local'
+./gradlew :order-service:bootRun --args='--spring.profiles.active=local'
+./gradlew :payment-service:bootRun --args='--spring.profiles.active=local'
 ```
 
-`saga-e2e` 프로파일에서 활성화되는 항목:
+`local` 프로파일에서 기본 활성화되는 항목:
 
 - Kafka consumer
 - outbox relay
@@ -356,8 +356,8 @@ docker compose -f infra/docker-compose.full.yml up --build -d
 
 도커 실행 시점 특징:
 
-- 각 서비스는 `local,saga-e2e,docker` 프로파일 조합으로 실행됩니다
-- `application-docker.yml`에서 `localhost` 대신 서비스명 기반 주소를 사용합니다
+- 각 서비스는 `local` 프로파일로 실행됩니다
+- Docker Compose 실행 시에는 환경변수 override로 `localhost` 대신 서비스명 기반 주소를 사용합니다
 - Kafka는 내부 리스너 `kafka:29092`, 외부 리스너 `localhost:19092`를 함께 사용합니다
 - 이 구조는 이후 ECS/ECR 배포 시 이미지 재사용이 가능하도록 generic Dockerfile 기반으로 맞췄습니다
 

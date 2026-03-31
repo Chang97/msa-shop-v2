@@ -1,1 +1,9 @@
-# local profile currently uses application.yml defaults
+app:
+  kafka:
+    consumers:
+      order-payment-saga-enabled: true
+    producer:
+      relay-enabled: true
+  payment:
+    reconciliation:
+      enabled: true

@@ -67,8 +67,6 @@ public class PaymentResultSagaService implements HandlePaymentResultUseCase {
         Order order = loadOrderPort.loadOrder(payload.orderId());
         OrderStatus from = order.getStatus();
 
-        // order-service는 주문 상태만 책임진다.
-        // 재고 확정은 이미 product-service에서 끝난 상태다.
         order.markPaid();
 
         if (from != order.getStatus()) {
@@ -77,7 +75,7 @@ public class PaymentResultSagaService implements HandlePaymentResultUseCase {
                     order.getOrderId(),
                     from,
                     order.getStatus(),
-                    "PAYMENT_APPROVED",
+                    historyReason(from, "PAYMENT_APPROVED"),
                     order.getUserId()
             );
         }
@@ -89,14 +87,18 @@ public class PaymentResultSagaService implements HandlePaymentResultUseCase {
     private boolean handlePaymentFailed(String consumerGroup, EventEnvelope envelope) {
         PaymentFailedPayload payload = deserializeFailedPayload(consumerGroup, envelope);
         Order order = loadOrderPort.loadOrder(payload.orderId());
+        OrderStatus from = order.getStatus();
 
-        // 현재는 주문을 PENDING_PAYMENT에 그대로 두고 history만 남긴다.
-        // 이렇게 하면 별도 실패 상태를 늘리지 않고도 재결제나 취소 흐름을 열어둘 수 있다.
+        order.markPaymentFailed();
+
+        if (from != order.getStatus()) {
+            saveOrderPort.save(order);
+        }
         saveOrderStatusHistoryPort.saveHistory(
                 order.getOrderId(),
+                from,
                 order.getStatus(),
-                order.getStatus(),
-                "PAYMENT_FAILED:" + payload.reasonCode(),
+                historyReason(from, "PAYMENT_FAILED") + ":" + payload.reasonCode(),
                 order.getUserId()
         );
 
@@ -107,14 +109,18 @@ public class PaymentResultSagaService implements HandlePaymentResultUseCase {
     private boolean handleStockReservationFailed(String consumerGroup, EventEnvelope envelope) {
         StockReservationFailedPayload payload = deserializeReservationFailedPayload(consumerGroup, envelope);
         Order order = loadOrderPort.loadOrder(payload.orderId());
+        OrderStatus from = order.getStatus();
 
-        // 재고 예약 실패는 PG를 호출하기 전에 흐름이 멈춘 경우다.
-        // 이 시점에는 history만 남겨도 왜 주문이 진행되지 않았는지 설명할 수 있다.
+        order.markPaymentFailed();
+
+        if (from != order.getStatus()) {
+            saveOrderPort.save(order);
+        }
         saveOrderStatusHistoryPort.saveHistory(
                 order.getOrderId(),
+                from,
                 order.getStatus(),
-                order.getStatus(),
-                "STOCK_RESERVATION_FAILED:" + payload.reasonCode(),
+                historyReason(from, "STOCK_RESERVATION_FAILED") + ":" + payload.reasonCode(),
                 order.getUserId()
         );
 
@@ -159,5 +165,12 @@ public class PaymentResultSagaService implements HandlePaymentResultUseCase {
                     e
             );
         }
+    }
+
+    private String historyReason(OrderStatus from, String baseReason) {
+        if (from == OrderStatus.PAYMENT_EXPIRED) {
+            return baseReason + "_LATE";
+        }
+        return baseReason;
     }
 }

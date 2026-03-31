@@ -1,15 +1,16 @@
 package com.msashop.order.adapter.out.client;
 
 import com.msashop.common.web.exception.BusinessException;
-import com.msashop.common.web.exception.CommonErrorCode;
+import com.msashop.common.web.exception.OrderErrorCode;
 import com.msashop.order.application.port.out.LoadProductPort;
 import com.msashop.order.application.port.out.model.ProductRow;
-import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+
+import java.util.List;
 
 @Component
 @RequiredArgsConstructor
@@ -50,11 +51,11 @@ public class ProductClientAdapter implements LoadProductPort {
                     .bodyToMono(ProductResponse.class)
                     .block();
             if (res == null) {
-                throw new BusinessException(CommonErrorCode.COMMON_NOT_FOUND, "상품을 찾을 수 없습니다. productId: " + productId);
+                throw new BusinessException(OrderErrorCode.ORDER_PRODUCT_NOT_FOUND, "상품을 찾을 수 없습니다. productId: " + productId);
             }
             return new ProductRow(res.productId(), res.productName(), res.price(), res.stock(), res.status(), res.useYn());
         } catch (WebClientResponseException.NotFound e) {
-            throw new BusinessException(CommonErrorCode.COMMON_NOT_FOUND, "상품을 찾을 수 없습니다. productId: " + productId);
+            throw new BusinessException(OrderErrorCode.ORDER_PRODUCT_NOT_FOUND, "상품을 찾을 수 없습니다. productId: " + productId);
         }
     }
 
@@ -64,5 +65,4 @@ public class ProductClientAdapter implements LoadProductPort {
                                    Integer stock,
                                    String status,
                                    Boolean useYn) {}
-
 }

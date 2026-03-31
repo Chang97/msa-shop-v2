@@ -1,5 +1,7 @@
 package com.msashop.order.application.service;
 
+import com.msashop.common.web.exception.BusinessException;
+import com.msashop.common.web.exception.OrderErrorCode;
 import com.msashop.common.event.EventEnvelope;
 import com.msashop.common.event.EventTypes;
 import com.msashop.order.application.event.OrderPaymentSagaEventFactory;
@@ -9,31 +11,24 @@ import com.msashop.order.application.port.out.OutboxEventPort;
 import com.msashop.order.application.port.out.SaveOrderPort;
 import com.msashop.order.application.port.out.SaveOrderStatusHistoryPort;
 import com.msashop.order.domain.model.Order;
-import com.msashop.order.domain.model.OrderItem;
 import com.msashop.order.domain.model.OrderStatus;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-/**
- * PayOrderService 단위 테스트.
- *
- * 검증 목적:
- * - order-service가 결제 시작 가능 상태를 올바르게 판단하는지
- * - 주문 상태 변경, history 저장, saga 시작 이벤트 적재를 기대한 조건에서만 수행하는지
- */
 @ExtendWith(MockitoExtension.class)
 class PayOrderServiceTest {
 
@@ -55,38 +50,12 @@ class PayOrderServiceTest {
     @InjectMocks
     private PayOrderService service;
 
-    /**
-     * 정상 결제 시작 케이스.
-     *
-     * 시나리오:
-     * - 주문 상태가 CREATED
-     * - 사용자가 pay 요청
-     *
-     * 기대값:
-     * - 주문 상태가 PENDING_PAYMENT로 전이된다
-     * - 주문 저장이 호출된다
-     * - 상태 history가 CREATED -> PENDING_PAYMENT로 기록된다
-     * - StockReservationRequested saga 시작 이벤트가 outbox에 적재된다
-     */
     @Test
+    @DisplayName("CREATED 주문은 결제 시작 시 saga를 시작한다")
     void should_start_payment_and_append_stock_reservation_requested_event() {
-        Order order = createOrder(OrderStatus.CREATED);
+        Order order = OrderServiceFixtures.order(OrderStatus.CREATED);
         PayOrderCommand command = new PayOrderCommand(1L, 1L, "idem-1", "FAKE");
-
-        EventEnvelope sagaStartEvent = new EventEnvelope(
-                "event-1",
-                EventTypes.STOCK_RESERVATION_REQUESTED,
-                "ORDER",
-                "1",
-                "saga-1",
-                "corr-1",
-                null,
-                "order-service",
-                "order.payment.saga.v1",
-                "1",
-                Instant.now(),
-                "{\"orderId\":1}"
-        );
+        EventEnvelope sagaStartEvent = sagaStartEvent();
 
         when(loadOrderPort.loadOrder(1L)).thenReturn(order);
         when(orderPaymentSagaEventFactory.stockReservationRequested(order, command)).thenReturn(sagaStartEvent);
@@ -104,21 +73,56 @@ class PayOrderServiceTest {
         verify(outboxEventPort).append(sagaStartEvent);
     }
 
-    /**
-     * 중복 결제 시작 요청 방지 케이스.
-     *
-     * 시나리오:
-     * - 주문 상태가 이미 PENDING_PAYMENT
-     * - 사용자가 pay를 다시 요청
-     *
-     * 기대값:
-     * - 주문 저장이 다시 일어나지 않는다
-     * - 상태 history를 다시 남기지 않는다
-     * - saga 시작 이벤트를 중복 발행하지 않는다
-     */
     @Test
+    @DisplayName("PAYMENT_FAILED 주문은 재결제를 허용한다")
+    void should_restart_payment_when_order_is_payment_failed() {
+        Order order = OrderServiceFixtures.order(OrderStatus.PAYMENT_FAILED);
+        PayOrderCommand command = new PayOrderCommand(1L, 1L, "idem-1", "FAKE");
+        EventEnvelope sagaStartEvent = sagaStartEvent();
+
+        when(loadOrderPort.loadOrder(1L)).thenReturn(order);
+        when(orderPaymentSagaEventFactory.stockReservationRequested(order, command)).thenReturn(sagaStartEvent);
+
+        service.payOrder(command);
+
+        verify(saveOrderPort).save(order);
+        verify(saveOrderStatusHistoryPort).saveHistory(
+                1L,
+                OrderStatus.PAYMENT_FAILED,
+                OrderStatus.PENDING_PAYMENT,
+                "PAYMENT_STARTED",
+                1L
+        );
+        verify(outboxEventPort).append(sagaStartEvent);
+    }
+
+    @Test
+    @DisplayName("PAYMENT_EXPIRED 주문은 재결제를 허용한다")
+    void should_restart_payment_when_order_is_payment_expired() {
+        Order order = OrderServiceFixtures.order(OrderStatus.PAYMENT_EXPIRED);
+        PayOrderCommand command = new PayOrderCommand(1L, 1L, "idem-1", "FAKE");
+        EventEnvelope sagaStartEvent = sagaStartEvent();
+
+        when(loadOrderPort.loadOrder(1L)).thenReturn(order);
+        when(orderPaymentSagaEventFactory.stockReservationRequested(order, command)).thenReturn(sagaStartEvent);
+
+        service.payOrder(command);
+
+        verify(saveOrderPort).save(order);
+        verify(saveOrderStatusHistoryPort).saveHistory(
+                1L,
+                OrderStatus.PAYMENT_EXPIRED,
+                OrderStatus.PENDING_PAYMENT,
+                "PAYMENT_STARTED",
+                1L
+        );
+        verify(outboxEventPort).append(sagaStartEvent);
+    }
+
+    @Test
+    @DisplayName("PENDING_PAYMENT 주문은 saga를 다시 시작하지 않는다")
     void should_not_append_event_when_order_is_already_pending_payment() {
-        Order order = createOrder(OrderStatus.PENDING_PAYMENT);
+        Order order = OrderServiceFixtures.order(OrderStatus.PENDING_PAYMENT);
         PayOrderCommand command = new PayOrderCommand(1L, 1L, "idem-1", "FAKE");
 
         when(loadOrderPort.loadOrder(1L)).thenReturn(order);
@@ -136,26 +140,35 @@ class PayOrderServiceTest {
         verify(outboxEventPort, never()).append(any());
     }
 
-    private Order createOrder(OrderStatus status) {
-        return Order.rehydrate(
-                1L,
-                "ORD-001",
-                1L,
-                status,
-                "KRW",
-                new BigDecimal("10000"),
-                BigDecimal.ZERO,
-                BigDecimal.ZERO,
-                new BigDecimal("10000"),
-                "홍길동",
-                "010-1111-2222",
-                "12345",
-                "서울시 강남구",
-                "101동 1001호",
+    @Test
+    @DisplayName("다른 사용자의 주문은 결제를 시작할 수 없다")
+    void should_throw_when_user_does_not_own_order() {
+        Order order = OrderServiceFixtures.order(OrderStatus.CREATED);
+        when(loadOrderPort.loadOrder(1L)).thenReturn(order);
+
+        BusinessException exception = assertThrows(
+                BusinessException.class,
+                () -> service.payOrder(new PayOrderCommand(1L, 999L, "idem-1", "FAKE"))
+        );
+
+        assertEquals(OrderErrorCode.ORDER_ACCESS_DENIED, exception.errorCode());
+        verify(saveOrderPort, never()).save(any());
+    }
+
+    private EventEnvelope sagaStartEvent() {
+        return new EventEnvelope(
+                "event-1",
+                EventTypes.STOCK_RESERVATION_REQUESTED,
+                "ORDER",
+                "1",
+                "saga-1",
+                "corr-1",
                 null,
-                List.of(new OrderItem(10L, "테스트 상품", new BigDecimal("10000"), 1)),
+                "order-service",
+                "order.payment.saga.v1",
+                "1",
                 Instant.now(),
-                Instant.now()
+                "{\"orderId\":1}"
         );
     }
 }

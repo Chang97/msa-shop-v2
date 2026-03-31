@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
@@ -35,7 +36,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * 주문-결제 saga에서 product-service가 맡은 재고 예약 흐름을 검증한다.
+ * 주문-결제 saga에서 product-service가 맡는 재고 예약 흐름을 검증한다.
  */
 @ExtendWith(MockitoExtension.class)
 class OrderPaymentSagaServiceTest {
@@ -50,6 +51,9 @@ class OrderPaymentSagaServiceTest {
     private StockReservationPort stockReservationPort;
 
     @Mock
+    private StockReservationLocalTxService stockReservationLocalTxService;
+
+    @Mock
     private OutboxEventPort outboxEventPort;
 
     @Mock
@@ -59,7 +63,7 @@ class OrderPaymentSagaServiceTest {
     private OrderPaymentSagaService service;
 
     /**
-     * 신규 예약 요청이면 재고 예약 후 STOCK_RESERVED 이벤트를 적재해야 한다.
+     * 신규 예약 요청이면 재고를 예약하고 STOCK_RESERVED 이벤트를 적재해야 한다.
      */
     @Test
     @DisplayName("신규 예약 요청이면 재고를 예약하고 STOCK_RESERVED 이벤트를 적재한다")
@@ -76,7 +80,7 @@ class OrderPaymentSagaServiceTest {
         boolean handled = service.handle("product-group", "product-worker", 300L, sourceEvent);
 
         assertTrue(handled);
-        verify(stockReservationPort).reserve(anyString(), eq(1L), eq(payload.items()));
+        verify(stockReservationLocalTxService).reserve(anyString(), eq(1L), eq(payload.items()));
         verify(outboxEventPort).append(reservedEvent);
         verify(processedEventPort).markProcessed(eq("product-group"), eq("event-1"), any(Instant.class));
         verify(processedEventPort, never()).releaseClaim(anyString(), anyString(), anyString());
@@ -100,13 +104,13 @@ class OrderPaymentSagaServiceTest {
         boolean handled = service.handle("product-group", "product-worker", 300L, sourceEvent);
 
         assertTrue(handled);
-        verify(stockReservationPort, never()).reserve(anyString(), anyLong(), any());
+        verify(stockReservationLocalTxService, never()).reserve(anyString(), anyLong(), any());
         verify(outboxEventPort).append(reservedEvent);
         verify(processedEventPort).markProcessed(eq("product-group"), eq("event-1"), any(Instant.class));
     }
 
     /**
-     * 재고 부족 같은 비즈니스 실패는 DLQ가 아니라 STOCK_RESERVATION_FAILED 이벤트로 전환해야 한다.
+     * 재고 부족 같은 비즈니스 실패는 실패 이벤트를 적재하고 processed 처리해야 한다.
      */
     @Test
     @DisplayName("재고 부족이면 STOCK_RESERVATION_FAILED 이벤트를 적재하고 processed 처리한다")
@@ -124,7 +128,10 @@ class OrderPaymentSagaServiceTest {
                 eq("STOCK_RESERVATION_FAILED"),
                 anyString()
         )).thenReturn(failedEvent);
-        whenThrowStockShortageOnReserve();
+        Mockito.doThrow(new BusinessException(
+                PaymentErrorCode.PAYMENT_STOCK_SHORTAGE,
+                "재고가 부족합니다."
+        )).when(stockReservationLocalTxService).reserve(anyString(), eq(1L), any());
 
         boolean handled = service.handle("product-group", "product-worker", 300L, sourceEvent);
 
@@ -135,7 +142,7 @@ class OrderPaymentSagaServiceTest {
     }
 
     /**
-     * 결제 승인 이벤트는 기존 예약을 확정 상태로만 바꿔야 한다.
+     * 결제 승인 이벤트는 기존 예약을 확정 상태로 바꿔야 한다.
      */
     @Test
     @DisplayName("PAYMENT_APPROVED를 받으면 예약을 CONFIRMED로 확정한다")
@@ -164,7 +171,7 @@ class OrderPaymentSagaServiceTest {
     }
 
     /**
-     * 결제 실패 이벤트는 기존 예약을 해제하고 재고를 복구하는 흐름으로 가야 한다.
+     * 결제 실패 이벤트는 기존 예약을 해제해야 한다.
      */
     @Test
     @DisplayName("PAYMENT_FAILED를 받으면 예약을 해제한다")
@@ -192,7 +199,7 @@ class OrderPaymentSagaServiceTest {
     }
 
     /**
-     * 공통 claim 성공 세팅을 만든다.
+     * 공통 claim 성공 상태를 세팅한다.
      */
     private void mockClaimSuccess(EventEnvelope envelope) {
         when(processedEventPort.claim(
@@ -204,20 +211,6 @@ class OrderPaymentSagaServiceTest {
         )).thenReturn(true);
     }
 
-    /**
-     * 재고 부족 비즈니스 예외를 모킹한다.
-     */
-    private void whenThrowStockShortageOnReserve() {
-        when(stockReservationPort.findActiveReservationId(1L)).thenReturn(Optional.empty());
-        org.mockito.Mockito.doThrow(new BusinessException(
-                PaymentErrorCode.PAYMENT_STOCK_SHORTAGE,
-                "재고가 부족합니다."
-        )).when(stockReservationPort).reserve(anyString(), eq(1L), any());
-    }
-
-    /**
-     * 재고 예약 요청 이벤트를 만든다.
-     */
     private EventEnvelope stockReservationRequestedEvent() {
         return new EventEnvelope(
                 "event-1",
@@ -235,9 +228,6 @@ class OrderPaymentSagaServiceTest {
         );
     }
 
-    /**
-     * 결제 승인 이벤트를 만든다.
-     */
     private EventEnvelope paymentApprovedEvent() {
         return new EventEnvelope(
                 "event-2",
@@ -255,9 +245,6 @@ class OrderPaymentSagaServiceTest {
         );
     }
 
-    /**
-     * 결제 실패 이벤트를 만든다.
-     */
     private EventEnvelope paymentFailedEvent() {
         return new EventEnvelope(
                 "event-3",
@@ -275,9 +262,6 @@ class OrderPaymentSagaServiceTest {
         );
     }
 
-    /**
-     * 예약 성공 후 발행할 STOCK_RESERVED 이벤트를 만든다.
-     */
     private EventEnvelope stockReservedEvent() {
         return new EventEnvelope(
                 "event-4",
@@ -295,9 +279,6 @@ class OrderPaymentSagaServiceTest {
         );
     }
 
-    /**
-     * 예약 실패 후 발행할 STOCK_RESERVATION_FAILED 이벤트를 만든다.
-     */
     private EventEnvelope stockReservationFailedEvent() {
         return new EventEnvelope(
                 "event-5",
@@ -315,9 +296,6 @@ class OrderPaymentSagaServiceTest {
         );
     }
 
-    /**
-     * 재고 예약 요청 payload를 만든다.
-     */
     private StockReservationRequestedPayload stockReservationRequestedPayload() {
         return new StockReservationRequestedPayload(
                 1L,

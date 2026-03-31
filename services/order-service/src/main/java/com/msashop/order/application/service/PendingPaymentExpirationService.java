@@ -1,9 +1,5 @@
 package com.msashop.order.application.service;
 
-import com.msashop.common.web.exception.BusinessException;
-import com.msashop.common.web.exception.OrderErrorCode;
-import com.msashop.order.application.port.in.CancelOrderUseCase;
-import com.msashop.order.application.port.in.model.CancelOrderCommand;
 import com.msashop.order.application.port.out.LoadOrderPort;
 import com.msashop.order.application.port.out.SaveOrderPort;
 import com.msashop.order.application.port.out.SaveOrderStatusHistoryPort;
@@ -13,32 +9,37 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
+
 @Service
 @RequiredArgsConstructor
-@Transactional
-public class CancelOrderService implements CancelOrderUseCase {
+public class PendingPaymentExpirationService {
 
     private final LoadOrderPort loadOrderPort;
     private final SaveOrderPort saveOrderPort;
     private final SaveOrderStatusHistoryPort saveOrderStatusHistoryPort;
 
-    @Override
-    public void cancelOrder(CancelOrderCommand command) {
-        Order order = loadOrderPort.loadOrder(command.orderId());
-        OrderStatus from = order.getStatus();
-        try {
-            order.cancel();
-        } catch (IllegalStateException e) {
-            throw new BusinessException(OrderErrorCode.ORDER_CANCEL_NOT_ALLOWED, e.getMessage());
+    @Transactional
+    public void expirePendingPayments(Instant threshold, int batchSize) {
+        for (Long orderId : loadOrderPort.loadPendingPaymentOrderIdsBefore(threshold, batchSize)) {
+            expirePendingPayment(orderId);
         }
+    }
+
+    private void expirePendingPayment(Long orderId) {
+        Order order = loadOrderPort.loadOrder(orderId);
+        OrderStatus from = order.getStatus();
+
+        order.markPaymentExpired();
+
         if (from != order.getStatus()) {
             saveOrderPort.save(order);
             saveOrderStatusHistoryPort.saveHistory(
                     order.getOrderId(),
                     from,
                     order.getStatus(),
-                    command.reason(),
-                    command.userId()
+                    "PAYMENT_EXPIRED",
+                    order.getUserId()
             );
         }
     }
