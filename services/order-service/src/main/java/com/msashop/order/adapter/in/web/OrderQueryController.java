@@ -37,7 +37,6 @@ public class OrderQueryController {
     @GetMapping("/{orderId}")
     public ResponseEntity<OrderResponse> getOrder(@AuthenticationPrincipal CurrentUser currentUser,
                                                   @PathVariable Long orderId) {
-        // Optionally check ownership in service layer
-        return ResponseEntity.ok(OrderWebQueryMapper.toResponse(getOrderUseCase.getOrder(orderId)));
+        return ResponseEntity.ok(OrderWebQueryMapper.toResponse(getOrderUseCase.getOrder(orderId, currentUser.userId())));
     }
 }

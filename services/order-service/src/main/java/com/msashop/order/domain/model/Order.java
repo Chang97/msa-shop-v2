@@ -168,7 +168,8 @@ public class Order {
                 return;
             }
             case PAID -> throw new IllegalStateException("이미 결제가 완료된 주문입니다.");
-            case CREATED, PENDING_PAYMENT, PAYMENT_FAILED, PAYMENT_EXPIRED -> this.status = OrderStatus.CANCELLED;
+            case PENDING_PAYMENT -> throw new IllegalStateException("결제가 진행 중인 주문은 취소할 수 없습니다.");
+            case CREATED, PAYMENT_FAILED, PAYMENT_EXPIRED -> this.status = OrderStatus.CANCELLED;
         }
     }
 
