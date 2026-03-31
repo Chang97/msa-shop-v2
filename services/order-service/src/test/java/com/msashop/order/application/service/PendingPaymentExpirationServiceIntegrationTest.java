@@ -7,6 +7,8 @@ import com.msashop.order.config.JpaAuditConfig;
 import com.msashop.order.domain.model.Order;
 import com.msashop.order.domain.model.OrderItem;
 import com.msashop.order.domain.model.OrderStatus;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -61,6 +63,20 @@ class PendingPaymentExpirationServiceIntegrationTest {
 
     @Autowired
     private JdbcTemplate jdbcTemplate;
+
+    @BeforeEach
+    @AfterEach
+    void resetDatabase() {
+        jdbcTemplate.execute("""
+                TRUNCATE TABLE
+                    order_status_history,
+                    outbox_event,
+                    processed_event,
+                    order_item,
+                    orders
+                RESTART IDENTITY CASCADE
+                """);
+    }
 
     @Test
     @DisplayName("결제 진행 중 주문은 만료 시간이 지나면 PAYMENT_EXPIRED와 이력이 저장된다")

@@ -16,6 +16,8 @@ import com.msashop.product.adapter.out.persistence.repo.StockReservationJpaRepos
 import com.msashop.product.application.event.ProductSagaEventFactory;
 import com.msashop.product.config.JpaAuditConfig;
 import com.msashop.product.domain.model.ProductStatus;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -82,6 +84,20 @@ class OrderPaymentSagaServiceIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @BeforeEach
+    @AfterEach
+    void resetDatabase() {
+        jdbcTemplate.execute("""
+                TRUNCATE TABLE
+                    stock_reservation_item,
+                    stock_reservation,
+                    outbox_event,
+                    processed_event,
+                    product
+                RESTART IDENTITY CASCADE
+                """);
+    }
 
     @Test
     @DisplayName("재고 부족이면 예약은 롤백되고 실패 outbox와 processed_event만 남는다")

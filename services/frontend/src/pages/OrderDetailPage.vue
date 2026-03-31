@@ -94,7 +94,7 @@ const formatDate = (val) => (val ? new Date(val).toLocaleString() : '-');
 
 const canCancel = computed(() => {
   const st = orders.current?.status;
-  return st === 'CREATED' || st === 'PENDING_PAYMENT' || st === 'PAYMENT_FAILED' || st === 'PAYMENT_EXPIRED';
+  return st === 'CREATED' || st === 'PAYMENT_FAILED' || st === 'PAYMENT_EXPIRED';
 });
 
 const canPay = computed(() => {

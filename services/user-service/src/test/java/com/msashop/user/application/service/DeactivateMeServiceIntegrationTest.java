@@ -9,6 +9,8 @@ import com.msashop.user.adapter.out.persistence.repo.OutboxEventJpaRepository;
 import com.msashop.user.adapter.out.persistence.repo.UserCommandJpaRepository;
 import com.msashop.user.application.event.UserSagaEventFactory;
 import com.msashop.user.config.JpaAuditConfig;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +19,7 @@ import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -59,6 +62,21 @@ class DeactivateMeServiceIntegrationTest {
 
     @Autowired
     private OutboxEventJpaRepository outboxEventJpaRepository;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
+    @BeforeEach
+    @AfterEach
+    void resetDatabase() {
+        jdbcTemplate.execute("""
+                TRUNCATE TABLE
+                    users,
+                    outbox_event,
+                    processed_event
+                RESTART IDENTITY CASCADE
+                """);
+    }
 
     @Test
     @DisplayName("회원 비활성화는 user 상태 변경과 USER_DEACTIVATED outbox 적재를 함께 남긴다")

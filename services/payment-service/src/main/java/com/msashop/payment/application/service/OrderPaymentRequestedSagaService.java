@@ -70,12 +70,11 @@ public class OrderPaymentRequestedSagaService implements HandleOrderPaymentReque
             return true;
         }
 
-        // REQUESTED row를 먼저 커밋해 둔 뒤 PG를 호출해야,
-        // 호출 직후 장애가 나더라도 최소한 복구 기준이 되는 row는 남는다.
         PaymentTransaction requestedPayment = paymentSagaLocalTxService.findOrCreateRequested(envelope, payload);
 
+        PaymentGatewayResult gatewayResult;
         try {
-            PaymentGatewayResult gatewayResult = requestPaymentGatewayPort.request(
+            gatewayResult = requestPaymentGatewayPort.request(
                     new PaymentGatewayRequest(
                             payload.orderId(),
                             payload.userId(),
@@ -85,30 +84,7 @@ public class OrderPaymentRequestedSagaService implements HandleOrderPaymentReque
                             payload.provider()
                     )
             );
-
-            if (gatewayResult.approved()) {
-                paymentSagaLocalTxService.approveAndMarkProcessed(
-                        consumerGroup,
-                        envelope.eventId(),
-                        envelope,
-                        payload,
-                        requestedPayment,
-                        gatewayResult
-                );
-                return true;
-            }
-
-            paymentSagaLocalTxService.failAndMarkProcessed(
-                    consumerGroup,
-                    envelope.eventId(),
-                    envelope,
-                    payload,
-                    requestedPayment,
-                    gatewayResult
-            );
-            return true;
         } catch (Exception gatewayException) {
-            // PG 결과가 모호하면 즉시 실패로 확정하지 않고 APPROVAL_UNKNOWN으로 남긴다.
             paymentSagaLocalTxService.markApprovalUnknownAndProcessed(
                     consumerGroup,
                     envelope.eventId(),
@@ -117,6 +93,28 @@ public class OrderPaymentRequestedSagaService implements HandleOrderPaymentReque
             );
             return true;
         }
+
+        if (gatewayResult.approved()) {
+            paymentSagaLocalTxService.approveAndMarkProcessed(
+                    consumerGroup,
+                    envelope.eventId(),
+                    envelope,
+                    payload,
+                    requestedPayment,
+                    gatewayResult
+            );
+            return true;
+        }
+
+        paymentSagaLocalTxService.failAndMarkProcessed(
+                consumerGroup,
+                envelope.eventId(),
+                envelope,
+                payload,
+                requestedPayment,
+                gatewayResult
+        );
+        return true;
     }
 
     private StockReservedPayload deserializePayload(String consumerGroup, EventEnvelope envelope) {

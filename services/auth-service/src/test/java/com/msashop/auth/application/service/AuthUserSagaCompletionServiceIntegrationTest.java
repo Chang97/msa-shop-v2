@@ -10,6 +10,8 @@ import com.msashop.common.event.EventEnvelope;
 import com.msashop.common.event.EventTopics;
 import com.msashop.common.event.EventTypes;
 import com.msashop.common.event.payload.UserDeactivatedPayload;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,6 +67,21 @@ class AuthUserSagaCompletionServiceIntegrationTest {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @BeforeEach
+    @AfterEach
+    void resetDatabase() {
+        jdbcTemplate.execute("""
+                TRUNCATE TABLE
+                    user_role_map,
+                    "role",
+                    auth_refresh_token,
+                    auth_user_credential,
+                    outbox_event,
+                    processed_event
+                RESTART IDENTITY CASCADE
+                """);
+    }
 
     @Test
     @DisplayName("USER_DEACTIVATED 이벤트를 처리하면 계정을 비활성화하고 processed_event를 완료 처리한다")

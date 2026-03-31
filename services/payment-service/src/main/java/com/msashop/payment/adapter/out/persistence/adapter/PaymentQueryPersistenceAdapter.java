@@ -6,6 +6,7 @@ import com.msashop.payment.application.port.out.LoadPaymentPort;
 import com.msashop.payment.domain.model.PaymentStatus;
 import com.msashop.payment.domain.model.PaymentTransaction;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,8 +28,10 @@ public class PaymentQueryPersistenceAdapter implements LoadPaymentPort {
 
     @Override
     public List<PaymentTransaction> findApprovalUnknown(int limit) {
-        return paymentQueryJpaRepository.findTop100ByStatusOrderByRequestedAtAsc(PaymentStatus.APPROVAL_UNKNOWN).stream()
-                .limit(limit)
+        return paymentQueryJpaRepository.findByStatusOrderByRequestedAtAsc(
+                        PaymentStatus.APPROVAL_UNKNOWN,
+                        PageRequest.of(0, limit)
+                ).stream()
                 .map(PaymentTransactionMapper::toDomain)
                 .toList();
     }

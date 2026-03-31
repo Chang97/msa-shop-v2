@@ -121,4 +121,29 @@ class PaymentQueryPersistenceAdapterTest {
         assertThat(found.get(0).getIdempotencyKey()).isEqualTo("idem-unknown-1");
         assertThat(found.get(0).getStatus()).isEqualTo(PaymentStatus.APPROVAL_UNKNOWN);
     }
+
+    @Test
+    @DisplayName("APPROVAL_UNKNOWN 조회는 전달한 limit만큼만 반환한다")
+    void should_respect_limit_when_loading_approval_unknown_payments() {
+        for (int i = 1; i <= 3; i++) {
+            paymentQueryJpaRepository.saveAndFlush(PaymentTransactionEntity.builder()
+                    .orderId((long) i)
+                    .userId(1L)
+                    .amount(new BigDecimal("10000"))
+                    .currency("KRW")
+                    .idempotencyKey("idem-unknown-" + i)
+                    .provider("FAKE")
+                    .reservationId("reservation-" + i)
+                    .sagaId("saga-" + i)
+                    .correlationId("corr-" + i)
+                    .sourceEventId("event-" + i)
+                    .status(PaymentStatus.APPROVAL_UNKNOWN)
+                    .requestedAt(Instant.now().minusSeconds(10L * i))
+                    .build());
+        }
+
+        List<PaymentTransaction> found = adapter.findApprovalUnknown(2);
+
+        assertThat(found).hasSize(2);
+    }
 }
