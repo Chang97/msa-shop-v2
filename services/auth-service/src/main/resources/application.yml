@@ -55,6 +55,10 @@ app:
       secure: false
       same-site: Lax
       path: /api/auth
+    login-lock:
+      key-prefix: auth:login-lock
+      max-failures: 5
+      lock-seconds: 600
     refresh-token:
       ttl-seconds: 604800
       key-prefix: auth:refresh_token

@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -39,6 +40,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
@@ -98,6 +100,9 @@ class AuthenticationApiIntegrationTest {
 
     @Autowired
     private OutboxEventJpaRepository outboxEventJpaRepository;
+
+    @MockBean
+    private com.msashop.auth.application.service.LoginAttemptLockService loginAttemptLockService;
 
     @AfterEach
     void tearDown() {
@@ -167,6 +172,18 @@ class AuthenticationApiIntegrationTest {
                         .content(objectMapper.writeValueAsString(new LoginRequest("disabled-user", "pass1234"))))
                 .andExpect(status().isUnauthorized())
                 .andExpect(jsonPath("$.message").isString());
+    }
+
+    @Test
+    @DisplayName("temporary locked account should return locked response")
+    void should_reject_locked_user_login() throws Exception {
+        when(loginAttemptLockService.isLocked("locked-user")).thenReturn(true);
+
+        mockMvc.perform(post("/api/auth/login")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(new LoginRequest("locked-user", "pass1234"))))
+                .andExpect(status().isLocked())
+                .andExpect(jsonPath("$.code").value("AUTH_004"));
     }
 
     @Test
