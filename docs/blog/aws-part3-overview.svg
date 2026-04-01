@@ -1,0 +1,121 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="980" viewBox="0 0 1680 980" role="img" aria-labelledby="title desc">
+  <title id="title">MSA Shop AWS 최종 배포 구조</title>
+  <desc id="desc">Public ALB, frontend nginx, internal ALB, ECS Cluster, RDS, Kafka, Redis를 포함한 최종 AWS 배포 구조</desc>
+  <defs>
+    <style>
+      .bg { fill: #f6f8fc; }
+      .title { font: 700 30px 'Pretendard', 'Noto Sans KR', sans-serif; fill: #162033; }
+      .sub { font: 500 16px 'Pretendard', 'Noto Sans KR', sans-serif; fill: #51607a; }
+      .label { font: 700 18px 'Pretendard', 'Noto Sans KR', sans-serif; fill: #2d3950; }
+      .text { font: 500 14px 'Pretendard', 'Noto Sans KR', sans-serif; fill: #3c4961; }
+      .textLight { font: 500 14px 'Pretendard', 'Noto Sans KR', sans-serif; fill: #dbeeff; }
+      .note { font: 500 13px 'Pretendard', 'Noto Sans KR', sans-serif; fill: #5d6c84; }
+      .outer { fill: #ffffff; stroke: #d7deea; stroke-width: 2; rx: 26; ry: 26; }
+      .public { fill: #eef6ff; stroke: #4e84c1; stroke-width: 2.2; rx: 18; ry: 18; }
+      .privateApp { fill: #f8fbff; stroke: #5b769c; stroke-width: 2.2; rx: 18; ry: 18; }
+      .privateData { fill: #eef8f0; stroke: #5f8f69; stroke-width: 2.2; rx: 18; ry: 18; }
+      .cluster { fill: #ffffff; stroke: #7c93b5; stroke-width: 2.2; rx: 18; ry: 18; }
+      .gateway { fill: #0f4c81; stroke: #0b3557; stroke-width: 2.2; rx: 16; ry: 16; }
+      .service { fill: #ffffff; stroke: #2d507b; stroke-width: 2.2; rx: 16; ry: 16; }
+      .infra { fill: #fff8e7; stroke: #d09a2e; stroke-width: 2.2; rx: 16; ry: 16; }
+      .aws { fill: #fff4ea; stroke: #d57d31; stroke-width: 2.2; rx: 16; ry: 16; }
+      .db { fill: #eef8f0; stroke: #5f8f69; stroke-width: 2.2; rx: 16; ry: 16; }
+      .tDark { font: 700 21px 'Pretendard', 'Noto Sans KR', sans-serif; fill: #173256; }
+      .tLight { font: 700 21px 'Pretendard', 'Noto Sans KR', sans-serif; fill: #ffffff; }
+      .line { stroke: #5b6c83; stroke-width: 2.6; fill: none; marker-end: url(#arrow); }
+      .lineDashed { stroke: #5b6c83; stroke-width: 2.4; fill: none; stroke-dasharray: 8 8; marker-end: url(#arrow); }
+      .lineOrange { stroke: #d57d31; stroke-width: 2.4; fill: none; stroke-dasharray: 8 8; marker-end: url(#arrowOrange); }
+      .lineGreen { stroke: #5f8f69; stroke-width: 2.4; fill: none; marker-end: url(#arrowGreen); }
+    </style>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#5b6c83" />
+    </marker>
+    <marker id="arrowOrange" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#d57d31" />
+    </marker>
+    <marker id="arrowGreen" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L9,3 z" fill="#5f8f69" />
+    </marker>
+  </defs>
+
+  <rect width="1680" height="980" class="bg" />
+  <text x="48" y="54" class="title">MSA Shop AWS 최종 배포 구조</text>
+  <text x="48" y="84" class="sub">프런트 same-origin 구조를 유지하기 위해 public ALB와 internal ALB를 분리한 최종 배치</text>
+
+  <rect x="70" y="112" width="220" height="92" class="aws" />
+  <text x="180" y="150" text-anchor="middle" class="tDark">사용자 / 클라이언트</text>
+  <text x="180" y="177" text-anchor="middle" class="text">브라우저 기준 진입점</text>
+
+  <rect x="36" y="238" width="1608" height="694" class="outer" />
+  <text x="70" y="276" class="label">VPC: msa-shop-vpc</text>
+
+  <rect x="72" y="320" width="1536" height="168" class="public" />
+  <text x="104" y="354" class="label">Public subnet</text>
+
+  <rect x="112" y="382" width="210" height="82" class="gateway" />
+  <text x="217" y="417" text-anchor="middle" class="tLight">Public ALB</text>
+  <text x="217" y="441" text-anchor="middle" class="textLight">외부 요청 진입점</text>
+
+  <rect x="390" y="382" width="260" height="82" class="infra" />
+  <text x="520" y="417" text-anchor="middle" class="tDark">frontend nginx EC2</text>
+  <text x="520" y="441" text-anchor="middle" class="text">정적 파일 서빙 /api 프록시</text>
+
+  <rect x="1120" y="382" width="170" height="82" class="aws" />
+  <text x="1205" y="417" text-anchor="middle" class="tDark">Kafka EC2</text>
+  <text x="1205" y="441" text-anchor="middle" class="text">비동기 이벤트</text>
+
+  <rect x="1328" y="382" width="170" height="82" class="aws" />
+  <text x="1413" y="417" text-anchor="middle" class="tDark">Redis EC2</text>
+  <text x="1413" y="441" text-anchor="middle" class="text">rate limit / 보조 인프라</text>
+
+  <rect x="72" y="528" width="1536" height="258" class="privateApp" />
+  <text x="104" y="562" class="label">Private app subnet</text>
+
+  <rect x="112" y="590" width="1440" height="170" class="cluster" />
+  <text x="144" y="636" class="label">ECS Cluster</text>
+
+  <rect x="150" y="654" width="190" height="68" class="gateway" />
+  <text x="245" y="695" text-anchor="middle" class="tLight">Internal ALB</text>
+
+  <rect x="404" y="654" width="170" height="68" class="gateway" />
+  <text x="489" y="695" text-anchor="middle" class="tLight">gateway</text>
+
+  <rect x="668" y="626" width="150" height="58" class="service" />
+  <text x="743" y="662" text-anchor="middle" class="tDark">auth</text>
+
+  <rect x="852" y="626" width="150" height="58" class="service" />
+  <text x="927" y="662" text-anchor="middle" class="tDark">user</text>
+
+  <rect x="1036" y="626" width="150" height="58" class="service" />
+  <text x="1111" y="662" text-anchor="middle" class="tDark">product</text>
+
+  <rect x="668" y="694" width="150" height="58" class="service" />
+  <text x="743" y="730" text-anchor="middle" class="tDark">order</text>
+
+  <rect x="852" y="694" width="150" height="58" class="service" />
+  <text x="927" y="730" text-anchor="middle" class="tDark">payment</text>
+
+  <rect x="1232" y="618" width="250" height="110" class="infra" />
+  <text x="1357" y="656" text-anchor="middle" class="tDark">Service Connect</text>
+  <text x="1357" y="682" text-anchor="middle" class="text">gateway와 내부 서비스 간</text>
+  <text x="1357" y="704" text-anchor="middle" class="text">이름 기반 통신</text>
+
+  <rect x="72" y="824" width="1536" height="78" class="privateData" />
+  <text x="104" y="854" class="label">Private data subnet</text>
+
+  <rect x="300" y="842" width="950" height="42" class="db" />
+  <text x="735" y="870" text-anchor="middle" class="text">RDS PostgreSQL: auth_db / user_db / product_db / order_db / payment_db</text>
+
+  <path class="line" d="M70 158 L40 158 L40 423 L112 423" />
+  <path class="line" d="M322 423 L390 423" />
+  <path class="line" d="M520 464 L520 520 L120 520 L120 688 L150 688" />
+  <path class="line" d="M340 688 L404 688" />
+
+  <path class="lineGreen" d="M806 759 L806 842" />
+  <path class="lineOrange" d="M1205 464 L1205 590" />
+  <path class="lineOrange" d="M1413 464 L1413 590" />
+
+  <text x="540" y="510" class="note">브라우저는 public ALB 하나만 보고, /api 요청은 frontend가 내부로 프록시한다</text>
+  <text x="142" y="742" class="note">internal ALB는 frontend 전용 backend entrypoint</text>
+  <text x="820" y="800" class="note">각 서비스는 자신의 DB에만 접근한다</text>
+</svg>

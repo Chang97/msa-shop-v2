@@ -15,6 +15,11 @@ spring:
       port: ${REDIS_PORT:6379}
 
 app:
+  auth:
+    cookie:
+      secure: false
+      same-site: Lax
+      path: /api/auth
   kafka:
     producer:
       batch-size: 20
