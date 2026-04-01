@@ -12,21 +12,21 @@ spring:
           predicates:
             - Path=/api/auth/login
           filters:
-            - name: RequestRateLimiter
+            - name: JsonRateLimiter
               args:
-                key-resolver: "#{@clientIpKeyResolver}"
-                redis-rate-limiter.replenishRate: 1
-                redis-rate-limiter.burstCapacity: 5
+                key-resolver-bean: clientIpKeyResolver
+                replenish-rate: 1
+                burst-capacity: 5
         - id: auth-refresh
           uri: ${AUTH_SERVICE_URI:http://localhost:8081}
           predicates:
             - Path=/api/auth/refresh
           filters:
-            - name: RequestRateLimiter
+            - name: JsonRateLimiter
               args:
-                key-resolver: "#{@clientIpKeyResolver}"
-                redis-rate-limiter.replenishRate: 2
-                redis-rate-limiter.burstCapacity: 10
+                key-resolver-bean: clientIpKeyResolver
+                replenish-rate: 2
+                burst-capacity: 10
         - id: auth
           uri: ${AUTH_SERVICE_URI:http://localhost:8081}
           predicates:
@@ -40,11 +40,11 @@ spring:
           predicates:
             - Path=/api/orders/*/pay
           filters:
-            - name: RequestRateLimiter
+            - name: JsonRateLimiter
               args:
-                key-resolver: "#{@authenticatedUserKeyResolver}"
-                redis-rate-limiter.replenishRate: 1
-                redis-rate-limiter.burstCapacity: 3
+                key-resolver-bean: authenticatedUserKeyResolver
+                replenish-rate: 1
+                burst-capacity: 3
         - id: order
           uri: ${ORDER_SERVICE_URI:http://localhost:8083}
           predicates:
