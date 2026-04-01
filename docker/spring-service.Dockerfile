@@ -12,7 +12,7 @@ COPY services ./services
 COPY e2e-test ./e2e-test
 
 RUN sed -i 's/\r$//' gradlew && chmod +x gradlew
-RUN ./gradlew ${MODULE}:bootJar -x test
+RUN ./gradlew clean ${MODULE}:bootJar -x test
 
 FROM eclipse-temurin:21-jre
 
