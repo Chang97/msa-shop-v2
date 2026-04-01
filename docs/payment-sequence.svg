@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1620" height="1080" viewBox="0 0 1620 1080" role="img" aria-labelledby="title desc">
-  <title id="title">주문-재고-결제 Saga 시퀀스 다이어그램</title>
-  <desc id="desc">order-service, product-service, payment-service가 Kafka 기반 Saga로 상호작용하는 흐름과 성공, 재고 실패, 결제 실패, 결제 미확정 분기를 설명하는 다이어그램</desc>
+<svg xmlns="http://www.w3.org/2000/svg" width="1640" height="1100" viewBox="0 0 1640 1100" role="img" aria-labelledby="title desc">
+  <title id="title">주문-재고-결제 Saga 시퀀스</title>
+  <desc id="desc">현재 구현 기준으로 order-service, product-service, payment-service가 Kafka Saga로 상호작용하는 흐름을 설명하는 다이어그램</desc>
   <defs>
     <style>
       .bg { fill: #f7f8fc; }
@@ -24,83 +24,84 @@
     </marker>
   </defs>
 
-  <rect class="bg" width="1620" height="1080" />
+  <rect class="bg" width="1640" height="1100" />
   <text x="50" y="58" class="title">주문-재고-결제 Saga 흐름</text>
-  <text x="50" y="92" class="subtitle">결제 전에 재고를 먼저 예약하고, 결제 결과에 따라 재고를 확정하거나 복구한다. PG 결과가 애매하면 APPROVAL_UNKNOWN으로 남긴 뒤 reconciliation이 최종 확정한다.</text>
+  <text x="50" y="92" class="subtitle">결제 시작은 order-service에서 시작하고, product-service가 먼저 재고를 예약한 뒤 payment-service가 결제를 진행한다.</text>
+  <text x="50" y="120" class="subtitle">결제 실패나 재고 예약 실패는 order 상태를 PAYMENT_FAILED로 반영하고, PG 결과가 불명확하면 APPROVAL_UNKNOWN과 reconciliation으로 후처리한다.</text>
 
-  <rect x="70" y="130" width="170" height="58" class="actor" />
-  <text x="155" y="166" text-anchor="middle" class="actorText">사용자</text>
+  <rect x="70" y="160" width="170" height="58" class="actor" />
+  <text x="155" y="196" text-anchor="middle" class="actorText">사용자</text>
 
-  <rect x="310" y="130" width="170" height="58" class="actor" />
-  <text x="395" y="166" text-anchor="middle" class="actorText">Gateway</text>
+  <rect x="310" y="160" width="170" height="58" class="actor" />
+  <text x="395" y="196" text-anchor="middle" class="actorText">Gateway</text>
 
-  <rect x="550" y="130" width="190" height="58" class="actor" />
-  <text x="645" y="166" text-anchor="middle" class="actorText">order-service</text>
+  <rect x="550" y="160" width="190" height="58" class="actor" />
+  <text x="645" y="196" text-anchor="middle" class="actorText">order-service</text>
 
-  <rect x="810" y="130" width="190" height="58" class="actorKafka" />
-  <text x="905" y="166" text-anchor="middle" class="actorText">Kafka</text>
+  <rect x="810" y="160" width="190" height="58" class="actorKafka" />
+  <text x="905" y="196" text-anchor="middle" class="actorText">Kafka</text>
 
-  <rect x="1070" y="130" width="190" height="58" class="actor" />
-  <text x="1165" y="166" text-anchor="middle" class="actorText">product-service</text>
+  <rect x="1070" y="160" width="190" height="58" class="actor" />
+  <text x="1165" y="196" text-anchor="middle" class="actorText">product-service</text>
 
-  <rect x="1330" y="130" width="190" height="58" class="actor" />
-  <text x="1425" y="166" text-anchor="middle" class="actorText">payment-service</text>
+  <rect x="1330" y="160" width="190" height="58" class="actor" />
+  <text x="1425" y="196" text-anchor="middle" class="actorText">payment-service</text>
 
-  <line x1="155" y1="188" x2="155" y2="840" class="lane" />
-  <line x1="395" y1="188" x2="395" y2="840" class="lane" />
-  <line x1="645" y1="188" x2="645" y2="840" class="lane" />
-  <line x1="905" y1="188" x2="905" y2="840" class="lane" />
-  <line x1="1165" y1="188" x2="1165" y2="840" class="lane" />
-  <line x1="1425" y1="188" x2="1425" y2="840" class="lane" />
+  <line x1="155" y1="218" x2="155" y2="840" class="lane" />
+  <line x1="395" y1="218" x2="395" y2="840" class="lane" />
+  <line x1="645" y1="218" x2="645" y2="840" class="lane" />
+  <line x1="905" y1="218" x2="905" y2="840" class="lane" />
+  <line x1="1165" y1="218" x2="1165" y2="840" class="lane" />
+  <line x1="1425" y1="218" x2="1425" y2="840" class="lane" />
 
-  <path class="msg" d="M155 230 L395 230" />
-  <text x="172" y="218" class="small">1. POST /api/orders/{id}/pay</text>
+  <path class="msg" d="M155 260 L395 260" />
+  <text x="176" y="248" class="small">1. POST /api/orders/{id}/pay</text>
 
-  <path class="msg" d="M395 280 L645 280" />
-  <text x="418" y="268" class="small">2. payOrder()</text>
+  <path class="msg" d="M395 310 L645 310" />
+  <text x="435" y="298" class="small">2. payOrder()</text>
 
-  <path class="msgKafka" d="M645 330 L905 330" />
-  <text x="668" y="318" class="small">3. StockReservationRequested 발행</text>
+  <path class="msgKafka" d="M645 360 L905 360" />
+  <text x="670" y="348" class="small">3. STOCK_RESERVATION_REQUESTED 발행</text>
 
-  <path class="msgKafka" d="M905 380 L1165 380" />
-  <text x="928" y="368" class="small">4. product가 예약 요청 이벤트 수신</text>
+  <path class="msgKafka" d="M905 410 L1165 410" />
+  <text x="930" y="398" class="small">4. product가 재고 예약 요청 수신</text>
 
-  <path class="msg" d="M1165 430 L1165 490" />
-  <text x="1184" y="458" class="small">5. 재고 감소 + reservation 저장</text>
+  <path class="msg" d="M1165 460 L1165 520" />
+  <text x="1185" y="488" class="small">5. 재고 예약 또는 실패 판단</text>
 
-  <path class="msgKafka" d="M1165 540 L905 540" />
-  <text x="925" y="528" class="small">6. StockReserved 또는 StockReservationFailed</text>
+  <path class="msgKafka" d="M1165 570 L905 570" />
+  <text x="930" y="558" class="small">6. STOCK_RESERVED 또는 STOCK_RESERVATION_FAILED 발행</text>
 
-  <path class="msgKafka" d="M905 590 L1425 590" />
-  <text x="1020" y="578" class="small">7. payment가 StockReserved를 수신한 경우에만 진행</text>
+  <path class="msgKafka" d="M905 620 L1425 620" />
+  <text x="1035" y="608" class="small">7. payment는 STOCK_RESERVED일 때만 결제 진행</text>
 
-  <path class="msg" d="M1425 640 L1425 700" />
-  <text x="1190" y="668" class="small">8. REQUESTED 저장 후 PG 호출</text>
+  <path class="msg" d="M1425 670 L1425 730" />
+  <text x="840" y="698" class="small">8. REQUESTED 저장 후 PG 호출, APPROVED / FAILED / APPROVAL_UNKNOWN 판단</text>
 
-  <path class="msgKafka" d="M1425 750 L905 750" />
-  <text x="1080" y="738" class="small">9. PaymentApproved 또는 PaymentFailed 발행</text>
+  <path class="msgKafka" d="M1425 780 L905 780" />
+  <text x="1090" y="768" class="small">9. 확정 시 PAYMENT_APPROVED 또는 PAYMENT_FAILED 발행</text>
 
-  <path class="msgKafka" d="M905 800 L645 800" />
-  <text x="704" y="788" class="small">10. order가 결과 이벤트 수신</text>
+  <path class="msgKafka" d="M905 830 L645 830" />
+  <text x="710" y="818" class="small">10. order가 결과 이벤트를 수신해 PAID 또는 PAYMENT_FAILED로 반영</text>
 
-  <path class="msgKafka" d="M905 830 L1165 830" />
-  <text x="950" y="818" class="small">11. product가 결과 이벤트 수신</text>
+  <path class="msgKafka" d="M905 860 L1165 860" />
+  <text x="955" y="848" class="small">11. product가 결과 이벤트를 수신해 CONFIRMED 또는 RELEASED 처리</text>
 
-  <rect x="20" y="890" width="520" height="150" class="branch" />
-  <text x="280" y="922" text-anchor="middle" class="branchTitle">성공 흐름</text>
-  <text x="280" y="950" text-anchor="middle" class="small">• order: CREATED → PENDING_PAYMENT → PAID</text>
-  <text x="280" y="978" text-anchor="middle" class="small">• product: stock_reservation = CONFIRMED, 재고 감소 유지</text>
-  <text x="280" y="1006" text-anchor="middle" class="small">• payment: REQUESTED → APPROVED</text>
+  <rect x="20" y="900" width="500" height="160" class="branch" />
+  <text x="270" y="934" text-anchor="middle" class="branchTitle">정상 승인 흐름</text>
+  <text x="270" y="966" text-anchor="middle" class="small">order: CREATED → PENDING_PAYMENT → PAID</text>
+  <text x="270" y="994" text-anchor="middle" class="small">product: RESERVED → CONFIRMED</text>
+  <text x="270" y="1022" text-anchor="middle" class="small">payment: REQUESTED → APPROVED</text>
 
-  <rect x="550" y="890" width="520" height="150" class="branch" />
-  <text x="810" y="922" text-anchor="middle" class="branchTitle">재고 예약 실패</text>
-  <text x="810" y="950" text-anchor="middle" class="small">• product가 StockReservationFailed를 발행</text>
-  <text x="810" y="978" text-anchor="middle" class="small">• order는 PENDING_PAYMENT 유지, history만 기록</text>
-  <text x="810" y="1006" text-anchor="middle" class="small">• payment는 호출되지 않음</text>
+  <rect x="570" y="900" width="500" height="160" class="branch" />
+  <text x="820" y="934" text-anchor="middle" class="branchTitle">재고 예약 실패 / 결제 실패</text>
+  <text x="820" y="966" text-anchor="middle" class="small">재고 예약 실패: payment 호출 없음, order → PAYMENT_FAILED</text>
+  <text x="820" y="994" text-anchor="middle" class="small">결제 실패: order → PAYMENT_FAILED, product → RELEASED</text>
+  <text x="820" y="1022" text-anchor="middle" class="small">이후 사용자는 재결제 또는 취소 가능</text>
 
-  <rect x="1080" y="890" width="520" height="150" class="branch" />
-  <text x="1340" y="922" text-anchor="middle" class="branchTitle">결제 실패 / 결제 미확정</text>
-  <text x="1340" y="950" text-anchor="middle" class="small">• 명시 실패: PaymentFailed → product가 예약 해제 + 재고 복구</text>
-  <text x="1340" y="978" text-anchor="middle" class="small">• 미확정: APPROVAL_UNKNOWN 저장, 원본 이벤트는 processed 처리</text>
-  <text x="1340" y="1006" text-anchor="middle" class="small">• reconciliation이 APPROVED 또는 FAILED로 최종 확정</text>
+  <rect x="1120" y="900" width="500" height="160" class="branch" />
+  <text x="1370" y="934" text-anchor="middle" class="branchTitle">결제 결과 불명확</text>
+  <text x="1370" y="966" text-anchor="middle" class="small">payment → APPROVAL_UNKNOWN, 현재 메시지는 markProcessed</text>
+  <text x="1370" y="994" text-anchor="middle" class="small">reconciliation이 APPROVED 또는 FAILED로 최종 확정</text>
+  <text x="1370" y="1022" text-anchor="middle" class="small">이후 order와 product가 최종 상태 반영</text>
 </svg>
