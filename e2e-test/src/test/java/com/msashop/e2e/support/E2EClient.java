@@ -14,22 +14,24 @@ import io.restassured.response.Response;
 public class E2EClient {
 
     private static final String BASE_URL = "http://localhost:8080";
+    private static final int MAX_RATE_LIMIT_RETRIES = 3;
+    private static final long RATE_LIMIT_RETRY_SLEEP_MILLIS = 1_100L;
+    private static String cachedAdminToken;
+    private static String cachedUserToken;
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     /**
      * admin/1234 계정으로 로그인해 accessToken을 반환.
      */
     public String loginAdminToken() {
-        TestFixtures.LoginRequest admin = TestFixtures.adminLogin();
-        return loginAndGetAccessToken(admin.loginId(), admin.password());
+        return cachedLoginToken(TestFixtures.adminLogin(), true);
     }
 
     /**
      * user1/1234 계정으로 로그인해 accessToken을 반환.
      */
     public String loginUserToken() {
-        TestFixtures.LoginRequest user = TestFixtures.userLogin();
-        return loginAndGetAccessToken(user.loginId(), user.password());
+        return cachedLoginToken(TestFixtures.userLogin(), false);
     }
 
     /**
@@ -50,18 +52,27 @@ public class E2EClient {
      * - Authorization 헤더는 토큰이 비어있지 않을 때만 추가한다.
      */
     public Response postJson(String path, String accessTokenOrNull, Object body) {
-        var request = RestAssured.given()
-                .baseUri(BASE_URL)
-                .header("Content-Type", "application/json")
-                .header("Accept", "application/json");
-        if (accessTokenOrNull != null && !accessTokenOrNull.isBlank()) {
-            request.header("Authorization", "Bearer " + accessTokenOrNull);
+        String jsonBody = write(body);
+        for (int attempt = 0; ; attempt++) {
+            var request = RestAssured.given()
+                    .baseUri(BASE_URL)
+                    .header("Content-Type", "application/json")
+                    .header("Accept", "application/json");
+            if (accessTokenOrNull != null && !accessTokenOrNull.isBlank()) {
+                request.header("Authorization", "Bearer " + accessTokenOrNull);
+            }
+
+            Response response = request
+                    .body(jsonBody)
+                    .when()
+                    .post(path)
+                    .andReturn();
+
+            if (!shouldRetryAfterRateLimit(path, response, attempt)) {
+                return response;
+            }
+            sleepRateLimitWindow();
         }
-        return request
-                .body(write(body))
-                .when()
-                .post(path)
-                .andReturn();
     }
 
     /**
@@ -90,13 +101,20 @@ public class E2EClient {
     }
 
     public Response postWithCookie(String path, String cookieName, String cookieValue) {
-        return RestAssured.given()
-                .baseUri(BASE_URL)
-                .accept("application/json")
-                .cookie(cookieName, cookieValue)
-                .when()
-                .post(path)
-                .andReturn();
+        for (int attempt = 0; ; attempt++) {
+            Response response = RestAssured.given()
+                    .baseUri(BASE_URL)
+                    .accept("application/json")
+                    .cookie(cookieName, cookieValue)
+                    .when()
+                    .post(path)
+                    .andReturn();
+
+            if (!shouldRetryAfterRateLimit(path, response, attempt)) {
+                return response;
+            }
+            sleepRateLimitWindow();
+        }
     }
 
     /**
@@ -125,5 +143,38 @@ public class E2EClient {
      */
     public Response getMe(String accessToken) {
         return get("/api/users/me", accessToken);
+    }
+
+    private synchronized String cachedLoginToken(TestFixtures.LoginRequest request, boolean admin) {
+        String cached = admin ? cachedAdminToken : cachedUserToken;
+        if (cached != null && !cached.isBlank()) {
+            return cached;
+        }
+
+        String issued = loginAndGetAccessToken(request.loginId(), request.password());
+        if (admin) {
+            cachedAdminToken = issued;
+        } else {
+            cachedUserToken = issued;
+        }
+        return issued;
+    }
+
+    private boolean shouldRetryAfterRateLimit(String path, Response response, int attempt) {
+        return response != null
+                && response.statusCode() == 429
+                && attempt < MAX_RATE_LIMIT_RETRIES
+                && ("/api/auth/login".equals(path)
+                || "/api/auth/refresh".equals(path)
+                || path.matches("/api/orders/[^/]+/pay"));
+    }
+
+    private void sleepRateLimitWindow() {
+        try {
+            Thread.sleep(RATE_LIMIT_RETRY_SLEEP_MILLIS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("rate limit 재시도 대기 중 인터럽트가 발생했습니다.", e);
+        }
     }
 }
