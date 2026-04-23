@@ -20,15 +20,13 @@
       .infraTitle { font: 700 24px 'Pretendard', 'Noto Sans KR', sans-serif; fill: #7a430c; }
       .infraBody { font: 500 15px 'Pretendard', 'Noto Sans KR', sans-serif; fill: #895626; }
       .line { stroke: #58677e; stroke-width: 2.5; fill: none; marker-end: url(#arrow); }
-      .lineKafka { stroke: #cc6b1d; stroke-width: 3; fill: none; marker-end: url(#arrowKafka); }
-      .lineKafkaPlain { stroke: #cc6b1d; stroke-width: 3; fill: none; }
+      .lineKafka { stroke: #cc6b1d; stroke-width: 3; fill: none; }
       .lineDb { stroke: #58677e; stroke-width: 2.5; fill: none; stroke-dasharray: 8 7; marker-end: url(#arrow); }
+      .lineDbPlain { stroke: #58677e; stroke-width: 2.5; fill: none; stroke-dasharray: 8 7; }
+      .legendText { font: 600 14px 'Pretendard', 'Noto Sans KR', sans-serif; fill: #7a430c; }
     </style>
     <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
       <path d="M0,0 L0,6 L9,3 z" fill="#58677e" />
-    </marker>
-    <marker id="arrowKafka" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto">
-      <path d="M0,0 L0,6 L9,3 z" fill="#cc6b1d" />
     </marker>
   </defs>
 
@@ -75,6 +73,7 @@
   <text x="810" y="615" text-anchor="middle" class="infraTitle">Kafka</text>
   <text x="810" y="646" text-anchor="middle" class="infraBody">auth.user.saga.v1 / order.payment.saga.v1 / DLQ</text>
   <text x="810" y="674" text-anchor="middle" class="infraBody">Outbox relay / processed_event claim / poison message 분기</text>
+  <text x="810" y="700" text-anchor="middle" class="legendText">주황색 선: Kafka publish / consume 이벤트 채널</text>
 
   <rect x="380" y="130" width="220" height="110" class="infra" />
   <text x="490" y="176" text-anchor="middle" class="infraTitle">Redis</text>
@@ -113,23 +112,20 @@
   <path class="line" d="M900 240 L1450 320" />
 
   <path class="lineKafka" d="M210 490 L210 630 L370 630" />
-  <path class="lineKafkaPlain" d="M520 490 L520 570" />
-  <path class="lineKafka" d="M520 710 L520 840" />
-  <path class="lineKafkaPlain" d="M830 490 L830 570" />
-  <path class="lineKafka" d="M830 710 L830 840" />
-  <path class="lineKafkaPlain" d="M1140 490 L1140 570" />
-  <path class="lineKafka" d="M1140 710 L1140 840" />
+  <path class="lineKafka" d="M520 490 L520 570" />
+  <path class="lineKafka" d="M830 490 L830 570" />
+  <path class="lineKafka" d="M1140 490 L1140 570" />
   <path class="lineKafka" d="M1450 490 L1450 630 L1250 630" />
 
   <path class="line" d="M670 185 L600 185" />
   <path class="line" d="M210 320 L210 270 L490 270 L490 240" />
 
   <path class="lineDb" d="M200 490 L200 840" />
-  <path class="lineDb" d="M510 490 L510 570" />
+  <path class="lineDbPlain" d="M510 490 L510 570" />
   <path class="lineDb" d="M510 710 L510 840" />
-  <path class="lineDb" d="M820 490 L820 570" />
+  <path class="lineDbPlain" d="M820 490 L820 570" />
   <path class="lineDb" d="M820 710 L820 840" />
-  <path class="lineDb" d="M1130 490 L1130 570" />
+  <path class="lineDbPlain" d="M1130 490 L1130 570" />
   <path class="lineDb" d="M1130 710 L1130 840" />
   <path class="lineDb" d="M1440 490 L1440 840" />
 </svg>

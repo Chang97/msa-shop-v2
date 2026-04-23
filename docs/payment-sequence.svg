@@ -82,10 +82,10 @@
   <text x="1090" y="768" class="small">9. 확정 시 PAYMENT_APPROVED 또는 PAYMENT_FAILED 발행</text>
 
   <path class="msgKafka" d="M905 830 L645 830" />
-  <text x="710" y="818" class="small">10. order가 결과 이벤트를 수신해 PAID 또는 PAYMENT_FAILED로 반영</text>
+  <text x="710" y="818" class="small">10. order가 같은 결과 이벤트를 소비해 PAID 또는 PAYMENT_FAILED로 반영</text>
 
   <path class="msgKafka" d="M905 860 L1165 860" />
-  <text x="955" y="848" class="small">11. product가 결과 이벤트를 수신해 CONFIRMED 또는 RELEASED 처리</text>
+  <text x="955" y="848" class="small">10. product가 같은 결과 이벤트를 소비해 CONFIRMED 또는 RELEASED 처리</text>
 
   <rect x="20" y="900" width="500" height="160" class="branch" />
   <text x="270" y="934" text-anchor="middle" class="branchTitle">정상 승인 흐름</text>

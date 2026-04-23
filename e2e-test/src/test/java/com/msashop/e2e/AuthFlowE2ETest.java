@@ -3,62 +3,66 @@ package com.msashop.e2e;
 import com.msashop.e2e.support.E2EClient;
 import com.msashop.e2e.support.E2EExtractors;
 import com.msashop.e2e.support.TestFixtures;
-import io.restassured.RestAssured;
 import io.restassured.response.Response;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-/**
- * 로그인 API 기본 동작 E2E 점검.
- * - 리프레시/로그아웃 흐름은 아직 포함하지 않음.
- */
+// 로그인, 토큰 재발급, 로그아웃의 기본 인증 흐름을 검증한다.
 class AuthFlowE2ETest {
 
     private final E2EClient client = new E2EClient();
 
+    // 로그인 성공 시 access token 이 발급되는지 검증한다.
     @Test
     void login_should_return_access_token() {
-        // given: 로그인 자격 증명
         Response response = client.postJson(
                 "/api/auth/login",
                 null,
                 TestFixtures.userLogin()
         );
 
-        // then: 200 응답에 accessToken 존재 확인
         assertEquals(200, response.statusCode());
         String accessToken = E2EExtractors.accessToken(response);
         assertNotNull(accessToken);
         assertFalse(accessToken.isBlank());
     }
 
+    // refresh token 이 회전되고 로그아웃 후에는 재사용할 수 없는지 검증한다.
     @Test
     void refresh_rotates_and_logout_invalidates() {
-        // 1) 로그인 : accessToken/rt 확보
+        // 1) 로그인으로 access token 과 refresh token 을 획득한다.
         Response login = client.postJson(
                 "/api/auth/login",
                 null,
                 TestFixtures.userLogin()
         );
         assertEquals(200, login.statusCode());
-        String accessToken1 = E2EExtractors.accessToken(login);
+
         String rt1 = login.getCookie("rt");
         assumeTrue(rt1 != null && !rt1.isBlank(), "rt 쿠키가 없습니다.");
 
-        // 2) rt로 1회 리프레시 -> 회전된 rt2/accessToken2 확보
+        // 2) refresh 호출로 새 refresh token 과 access token 을 발급받는다.
         Response refresh1 = client.postWithCookie(
                 "/api/auth/refresh",
                 "rt",
                 rt1
         );
         assertEquals(200, refresh1.statusCode());
+
         String accessToken2 = E2EExtractors.accessToken(refresh1);
         String rt2 = refresh1.getCookie("rt");
+        assertNotNull(accessToken2);
+        assertFalse(accessToken2.isBlank());
         assertNotNull(rt2);
+        assertNotEquals(rt1, rt2);
 
-        // 3) 최신 accessToken2로 로그아웃 -> 서버가 rt2/세션을 무효화한다는 가정
+        // 3) 최신 refresh token 으로 로그아웃한다.
         Response logout = client.postWithCookie(
                 "/api/auth/logout",
                 "rt",
@@ -66,13 +70,13 @@ class AuthFlowE2ETest {
         );
         assertEquals(204, logout.statusCode());
 
-        // 4) 로그아웃 이후 같은 rt2로 리프레시 시도 -> 실패 기대
+        // 4) 로그아웃 이후 같은 refresh token 으로 다시 refresh 하면 실패해야 한다.
         Response refreshAfterLogout = client.postWithCookie(
                 "/api/auth/refresh",
                 "rt",
                 rt2
         );
         assertTrue(refreshAfterLogout.statusCode() == 401 || refreshAfterLogout.statusCode() == 403,
-                "로그아웃 후 리프레시는 실패해야 합니다. actual=" + refreshAfterLogout.statusCode());
+                "로그아웃 후 refresh 는 실패해야 합니다. actual=" + refreshAfterLogout.statusCode());
     }
 }

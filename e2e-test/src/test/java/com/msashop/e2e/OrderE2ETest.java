@@ -10,142 +10,105 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assumptions.*;
-public class OrderE2ETest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+// 주문 생성 단계의 검증 범위와 상태 전이를 검증한다.
+class OrderE2ETest {
+
     private final E2EClient client = new E2EClient();
 
+    // 정상 주문 생성 시 CREATED 상태로 저장되는지 검증한다.
     @Test
-    public void create_order_created() {
-        // 1) 주문 생성 테스트용 상품 추가
-        // 1.1) 관리자 로그인
-        Response admin = client.postJson(
-                "/api/auth/login",
-                null,
-                TestFixtures.adminLogin()
-        );
+    void create_order_created() {
+        // 주문 생성 API 는 재고를 선점하지 않고 CREATED 상태의 주문만 만든다.
+        String adminToken = client.loginAdminToken();
+        Long productId = createProduct(adminToken, "E2E Order Product", 9900, 5);
 
-        assertEquals(200, admin.getStatusCode());
-        String adminAccessToken = E2EExtractors.accessToken(admin);
-        assertNotNull(adminAccessToken);
-        assertFalse(adminAccessToken.isBlank());
-        // 1.2) 상품 생성
-        var createProductBody = TestFixtures.product("주문 테스트 상품", 9900, 5);
-        Response product = client.postJson(
-                "/api/products",
-                adminAccessToken,
-                createProductBody
-        );
-        assertEquals(200, product.getStatusCode());
-        Long productId = E2EExtractors.productId(product);
+        String userToken = client.loginUserToken();
 
-        // 2) 주문
-        // 2.1) 일반 사용자 로그인
-        Response user = client.postJson(
-                "/api/auth/login",
-                null,
-                TestFixtures.userLogin()
-        );
-        assertEquals(200, user.getStatusCode());
-        String userAccessToken = E2EExtractors.accessToken(user);
-        assertNotNull(userAccessToken);
-        assertFalse(userAccessToken.isBlank());
-
-        // 2.2) 신규 주문 생성 (상품 정보는 위와 동일하게 입력)
         Response order = client.postJson(
                 "/api/orders",
-                userAccessToken,
-                TestFixtures.order(productId, new BigDecimal(9900), 2)
+                userToken,
+                TestFixtures.order(productId, new BigDecimal("9900"), 2)
         );
-        assertEquals(200, order.getStatusCode());
+        assertEquals(200, order.statusCode());
+
         Long orderId = E2EExtractors.orderId(order);
-        // 2.3) 주문 상태 확인 CREATED
-        Response orderDetail = client.get("/api/orders/" + orderId, userAccessToken);
-        assertEquals(200, orderDetail.getStatusCode());
-        String status = E2EExtractors.orderStatus(orderDetail);
-        assertEquals("CREATED", status, "초기 주문 상태는 CREATED 여야 합니다.");
+        Response orderDetail = client.get("/api/orders/" + orderId, userToken);
+        assertEquals(200, orderDetail.statusCode());
+        assertEquals("CREATED", E2EExtractors.orderStatus(orderDetail));
     }
 
+    // 비활성 상품 또는 판매 중지 상품은 주문 생성이 거절되는지 검증한다.
     @Test
-    public void insufficient_stock_should_fail_on_order_create() {
-        // 1) 관리자 로그인
-        Response admin = client.postJson("/api/auth/login", null, TestFixtures.adminLogin());
-        assertEquals(200, admin.getStatusCode());
-        String adminAccessToken = E2EExtractors.accessToken(admin);
+    void disabled_or_not_on_sale_product_should_fail() {
+        // 주문 생성 단계에서는 상품의 사용 여부와 판매 상태만 검증한다.
+        Response products = client.get("/api/products", null);
+        assertEquals(200, products.statusCode());
 
-        // 2) 재고 1개짜리 상품 생성
-        var createProductBody = TestFixtures.product("E2E Insufficient Product", 9900, 1);
-        Response product = client.postJson("/api/products", adminAccessToken, createProductBody);
-        assertTrue(product.getStatusCode() == 200 || product.getStatusCode() == 201);
-        Long productId = E2EExtractors.productId(product);
-
-        // 3) 사용자 로그인
-        Response user = client.postJson("/api/auth/login", null, TestFixtures.userLogin());
-        assertEquals(200, user.getStatusCode());
-        String userAccessToken = E2EExtractors.accessToken(user);
-
-        // 4) 재고보다 큰 수량 주문 → 409
-        Response order = client.postJson(
-                "/api/orders",
-                userAccessToken,
-                TestFixtures.order(productId, new BigDecimal(9900), 2)
-        );
-        assertEquals(409, order.getStatusCode());
-    }
-
-    @Test
-    public void disabled_or_not_on_sale_product_should_fail() {
-        // 시드 상품 조회
-        Response productsResp = client.get("/api/products", null);
-        assertEquals(200, productsResp.getStatusCode());
-        List<Map<String, Object>> products = productsResp.jsonPath().getList("");
-
-        Map<String, Object> disabled = findProductByName(products, "E2E Disabled Product");
-        Map<String, Object> stopped = findProductByName(products, "E2E Stopped Product");
+        List<Map<String, Object>> items = products.jsonPath().getList("");
+        Map<String, Object> disabled = findProductByName(items, "E2E Disabled Product");
+        Map<String, Object> stopped = findProductByName(items, "E2E Stopped Product");
 
         assertNotNull(disabled, "E2E Disabled Product 시드가 필요합니다.");
         assertNotNull(stopped, "E2E Stopped Product 시드가 필요합니다.");
 
-        Long disabledId = ((Number) disabled.get("productId")).longValue();
-        Long stoppedId = ((Number) stopped.get("productId")).longValue();
-        BigDecimal disabledPrice = toBigDecimal(disabled.get("price"));
-        BigDecimal stoppedPrice = toBigDecimal(stopped.get("price"));
+        String userToken = client.loginUserToken();
 
-        // 사용자 로그인
-        Response user = client.postJson("/api/auth/login", null, TestFixtures.userLogin());
-        assertEquals(200, user.getStatusCode());
-        String userAccessToken = E2EExtractors.accessToken(user);
-
-        // useYn=false 상품 주문 → 409
-        Response order1 = client.postJson(
+        Response disabledOrder = client.postJson(
                 "/api/orders",
-                userAccessToken,
-                TestFixtures.order(disabledId, disabledPrice, 1)
+                userToken,
+                TestFixtures.order(
+                        ((Number) disabled.get("productId")).longValue(),
+                        toBigDecimal(disabled.get("price")),
+                        1
+                )
         );
-        assertEquals(409, order1.getStatusCode());
+        assertEquals(409, disabledOrder.statusCode());
 
-        // status!=ON_SALE 상품 주문 → 409
-        Response order2 = client.postJson(
+        Response stoppedOrder = client.postJson(
                 "/api/orders",
-                userAccessToken,
-                TestFixtures.order(stoppedId, stoppedPrice, 1)
+                userToken,
+                TestFixtures.order(
+                        ((Number) stopped.get("productId")).longValue(),
+                        toBigDecimal(stopped.get("price")),
+                        1
+                )
         );
-        assertEquals(409, order2.getStatusCode());
+        assertEquals(409, stoppedOrder.statusCode());
+    }
+
+    private Long createProduct(String adminToken, String productName, int price, int stock) {
+        Response product = client.postJson(
+                "/api/products",
+                adminToken,
+                TestFixtures.product(productName, price, stock)
+        );
+        assertEquals(200, product.statusCode());
+        return E2EExtractors.productId(product);
     }
 
     private Map<String, Object> findProductByName(List<Map<String, Object>> products, String name) {
-        if (products == null) return null;
+        if (products == null) {
+            return null;
+        }
         return products.stream()
-                .filter(p -> name.equals(p.get("productName")))
+                .filter(product -> name.equals(product.get("productName")))
                 .findFirst()
                 .orElse(null);
     }
 
     private BigDecimal toBigDecimal(Object value) {
-        if (value instanceof BigDecimal bd) return bd;
-        if (value instanceof Number n) return new BigDecimal(n.toString());
-        if (value instanceof String s && !s.isBlank()) return new BigDecimal(s);
+        if (value instanceof BigDecimal decimal) {
+            return decimal;
+        }
+        if (value instanceof Number number) {
+            return new BigDecimal(number.toString());
+        }
+        if (value instanceof String text && !text.isBlank()) {
+            return new BigDecimal(text);
+        }
         throw new IllegalArgumentException("가격 변환 실패: " + value);
     }
-
 }

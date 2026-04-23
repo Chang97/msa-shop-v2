@@ -8,19 +8,22 @@ import org.springframework.stereotype.Component;
 import java.util.UUID;
 
 /**
- * 실제 PG가 없는 단계에서 saga 흐름을 검증하기 위한 fake adapter.
+ * 실제 PG가 없는 환경에서 saga 흐름을 검증하기 위한 fake adapter.
  *
- * 정책:
+ * 규칙:
  * - idempotencyKey가 FAIL- 로 시작하면 실패 반환
- * - 그 외는 승인 성공 반환
- *
- * 이후 실PG를 붙일 때는 이 구현체만 교체하면 된다.
+ * - idempotencyKey가 UNKNOWN- 로 시작하면 timeout 과 같은 예외 발생
+ * - 그 외에는 승인 성공 반환
  */
 @Component
 public class FakePaymentGatewayAdapter implements RequestPaymentGatewayPort {
 
     @Override
     public PaymentGatewayResult request(PaymentGatewayRequest request) {
+        if (request.idempotencyKey() != null && request.idempotencyKey().startsWith("UNKNOWN-")) {
+            throw new IllegalStateException("fake pg timeout");
+        }
+
         if (request.idempotencyKey() != null && request.idempotencyKey().startsWith("FAIL-")) {
             return new PaymentGatewayResult(
                     false,
