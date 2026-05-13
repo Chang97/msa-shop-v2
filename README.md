@@ -200,6 +200,25 @@ docker compose -f infra/docker-compose.yml up -d
 docker compose -f infra/docker-compose.full.yml up --build -d
 ```
 
+AWS 데모 서버는 비용 문제로 상시 운영하지 않으므로, 로컬 확인 시에는 아래 seed 계정을 사용할 수 있습니다.
+
+- Gateway: <http://localhost:8080>
+- 로컬 seed 계정
+  - Admin: `admin` / `1234`
+  - User: `user1` / `1234`
+
+위 계정은 로컬 실행 확인용 seed 계정이며, 운영/배포 계정이 아닙니다. DB 계정, 인프라 비밀번호, 토큰 등은 공개하지 않습니다.
+
+프론트엔드까지 확인하려면 Vue 프론트엔드를 실행해 Gateway와 연동할 수 있습니다.
+
+```bash
+cd services/frontend
+npm install
+npm run dev
+```
+
+개발 서버는 기본적으로 <http://localhost:5173>에서 실행됩니다.
+
 E2E 테스트는 로컬 서비스와 인프라가 떠 있는 상태에서 실행합니다.
 
 ```bash
