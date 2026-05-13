@@ -84,8 +84,8 @@ class ProductApiIntegrationTest {
     }
 
     @Test
-    @DisplayName("상품 목록 조회는 공개 API로 전체 상품을 반환한다")
-    void should_return_all_products() throws Exception {
+    @DisplayName("상품 목록 조회는 공개 API로 판매 가능한 상품만 반환한다")
+    void should_return_only_orderable_products() throws Exception {
         productCommandJpaRepository.save(ProductEntity.builder()
                 .productName("상품 A")
                 .price(new BigDecimal("10000"))
@@ -100,12 +100,26 @@ class ProductApiIntegrationTest {
                 .status(ProductStatus.ON_SALE)
                 .useYn(true)
                 .build());
+        productCommandJpaRepository.save(ProductEntity.builder()
+                .productName("비활성 상품")
+                .price(new BigDecimal("30000"))
+                .stock(3)
+                .status(ProductStatus.ON_SALE)
+                .useYn(false)
+                .build());
+        productCommandJpaRepository.save(ProductEntity.builder()
+                .productName("판매중단 상품")
+                .price(new BigDecimal("40000"))
+                .stock(3)
+                .status(ProductStatus.STOPPED)
+                .useYn(true)
+                .build());
 
         mockMvc.perform(get("/api/products"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.length()").value(2))
-                .andExpect(jsonPath("$[0].productName").isString())
-                .andExpect(jsonPath("$[1].productName").isString());
+                .andExpect(jsonPath("$[0].productName").value("상품 A"))
+                .andExpect(jsonPath("$[1].productName").value("상품 B"));
     }
 
     @Test

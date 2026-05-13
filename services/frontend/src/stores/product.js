@@ -67,12 +67,16 @@ export const useProductStore = defineStore('products', {
 
 function mapDetail(p = {}) {
   const stockValue = Number.isFinite(Number(p.stock)) ? Number(p.stock) : null;
+  const useYn = p.useYn ?? true;
+  const status = p.status;
   return {
     id: p.productId,
     name: p.productName,
     price: p.price,
     stock: stockValue,
-    status: p.status,
+    status,
+    useYn,
+    orderable: useYn === true && status === 'ON_SALE' && (stockValue ?? 0) > 0,
     createdAt: p.createdAt,
     raw: p
   };

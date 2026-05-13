@@ -24,8 +24,11 @@ export const useOrderStore = defineStore('orders', {
         this.loading = false;
       }
     },
-    async getById(orderId) {
-      this.loading = true;
+    async getById(orderId, options = {}) {
+      const silent = options?.silent === true;
+      if (!silent) {
+        this.loading = true;
+      }
       this.error = '';
       try {
         const { data } = await http.get(`/orders/${orderId}`);
@@ -36,7 +39,9 @@ export const useOrderStore = defineStore('orders', {
         this.error = parsed.message || '주문 조회 실패';
         throw parsed;
       } finally {
-        this.loading = false;
+        if (!silent) {
+          this.loading = false;
+        }
       }
     },
     async create(payload) {

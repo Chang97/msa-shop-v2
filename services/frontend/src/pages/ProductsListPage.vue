@@ -61,6 +61,12 @@
           >
             재고 {{ item.stock ?? 0 }}개
           </p>
+          <p
+            v-if="!isOrderable(item)"
+            class="muted"
+          >
+            현재 주문할 수 없는 상품입니다.
+          </p>
           <p class="created-at">
             등록일 {{ formatDate(item.createdAt) }}
           </p>
@@ -71,7 +77,7 @@
           </RouterLink>
           <button
             type="button"
-            :disabled="item.stock === 0"
+            :disabled="!isOrderable(item)"
             @click="addToCart(item)"
           >
             장바구니
@@ -98,10 +104,15 @@ const searchText = ref('');
 const loading = computed(() => products.loading);
 
 const visibleProducts = computed(() => {
-  if (!searchText.value) return products.items;
+  const orderableProducts = products.items.filter(isOrderable);
+  if (!searchText.value) return orderableProducts;
   const lower = searchText.value.toLowerCase();
-  return products.items.filter((item) => item.name?.toLowerCase().includes(lower));
+  return orderableProducts.filter((item) => item.name?.toLowerCase().includes(lower));
 });
+
+function isOrderable(item) {
+  return item?.useYn !== false && item?.status === 'ON_SALE' && Number(item?.stock ?? 0) > 0;
+}
 
 function formatCurrency(value) {
   return new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(value ?? 0);
@@ -123,6 +134,10 @@ async function load() {
 }
 
 function addToCart(product) {
+  if (!isOrderable(product)) {
+    emit('notify', { message: '현재 주문할 수 없는 상품입니다.' });
+    return;
+  }
   cart.addItem(product);
   emit('notify', { variant: 'info', message: `${product.name}을(를) 장바구니에 담았습니다.` });
 }

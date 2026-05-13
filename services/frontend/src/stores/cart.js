@@ -34,6 +34,7 @@ export const useCartStore = defineStore('cart', {
     },
     addItem(product, qty = 1) {
       if (!product?.id) return;
+      if (product.useYn === false || (product.status && product.status !== 'ON_SALE')) return;
       const normalizedQty = Math.max(1, Number(qty) || 1);
       const existing = this.items.find((item) => item.productId === product.id);
       const stockValue = Number.isFinite(Number(product.stock)) ? Number(product.stock) : null;
@@ -50,7 +51,9 @@ export const useCartStore = defineStore('cart', {
           productName: product.name,
           unitPrice: Number(product.price) || 0,
           qty: Math.min(limit, normalizedQty),
-          stock: stockValue
+          stock: stockValue,
+          status: product.status,
+          useYn: product.useYn ?? true
         });
       }
       this.sync();
@@ -84,7 +87,9 @@ export const useCartStore = defineStore('cart', {
             productName: item.productName,
             unitPrice: Number(item.unitPrice) || 0,
             qty: Math.max(1, Number(item.qty) || 1),
-            stock: stockValue
+            stock: stockValue,
+            status: item.status,
+            useYn: item.useYn ?? true
           };
         })
         .filter((item) => item.productId);

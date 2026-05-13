@@ -5,6 +5,7 @@ import com.msashop.common.web.exception.CommonErrorCode;
 import com.msashop.product.adapter.out.persistence.repo.ProductQueryJpaRepository;
 import com.msashop.product.application.port.out.LoadProductPort;
 import com.msashop.product.application.port.out.model.ProductRow;
+import com.msashop.product.domain.model.ProductStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -23,6 +24,6 @@ public class ProductQueryPersistenceAdapter implements LoadProductPort {
 
     @Override
     public List<ProductRow> findAll() {
-        return productQueryJpaRepository.findAllBy();
+        return productQueryJpaRepository.findAllByUseYnTrueAndStatusOrderByProductIdAsc(ProductStatus.ON_SALE);
     }
 }

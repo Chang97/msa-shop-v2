@@ -28,6 +28,9 @@
       <p v-else-if="orders.current.status === 'PAYMENT_EXPIRED'" class="error-banner">
         결제 가능 시간이 만료되었습니다. 결제를 다시 시도하거나 주문을 취소할 수 있습니다.
       </p>
+      <p v-else-if="isPendingPayment" class="info-banner">
+        결제 결과를 확인하는 중입니다. 완료되면 상태가 자동으로 갱신됩니다.
+      </p>
 
       <div class="info-grid">
         <div><strong>주문번호</strong><p>{{ orders.current.orderNumber }}</p></div>
@@ -68,7 +71,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
 import { RouterLink, useRoute } from 'vue-router';
 import { useOrderStore } from '@/stores/order';
 
@@ -77,6 +80,13 @@ const orders = useOrderStore();
 const paying = ref(false);
 const paymentKey = ref('');
 const paymentOrderId = ref(null);
+const polling = ref(false);
+
+const POLL_INTERVAL_MS = 1500;
+const POLL_TIMEOUT_MS = 60000;
+let pollTimer = null;
+let pollStartedAt = 0;
+let pollInFlight = false;
 
 const statusLabelMap = {
   CREATED: '생성됨',
@@ -104,17 +114,28 @@ const canPay = computed(() => {
 
 const payDisabled = computed(() => orders.loading || paying.value);
 
+const isPendingPayment = computed(() => orders.current?.status === 'PENDING_PAYMENT');
+
 const statusLabel = computed(() => {
   const st = orders.current?.status;
   return statusLabelMap[st] ?? st ?? '-';
 });
 
-const load = async () => {
-  const data = await orders.getById(route.params.orderId);
+const syncPaymentOrder = (data) => {
   const loadedOrderId = data?.orderId ?? null;
   if (paymentOrderId.value !== loadedOrderId) {
     paymentOrderId.value = loadedOrderId;
     paymentKey.value = '';
+  }
+};
+
+const load = async () => {
+  const data = await orders.getById(route.params.orderId);
+  syncPaymentOrder(data);
+  if (data?.status === 'PENDING_PAYMENT') {
+    startPolling();
+  } else {
+    stopPolling();
   }
 };
 
@@ -148,7 +169,73 @@ const pay = async () => {
   }
 };
 
+const clearPollTimer = () => {
+  if (pollTimer) {
+    clearTimeout(pollTimer);
+    pollTimer = null;
+  }
+};
+
+const stopPolling = () => {
+  clearPollTimer();
+  polling.value = false;
+  pollStartedAt = 0;
+  pollInFlight = false;
+};
+
+const schedulePoll = () => {
+  clearPollTimer();
+  pollTimer = setTimeout(pollOrderStatus, POLL_INTERVAL_MS);
+};
+
+const pollOrderStatus = async () => {
+  if (!polling.value || pollInFlight) return;
+
+  if (Date.now() - pollStartedAt > POLL_TIMEOUT_MS) {
+    stopPolling();
+    return;
+  }
+
+  pollInFlight = true;
+  try {
+    const data = await orders.getById(route.params.orderId, { silent: true });
+    syncPaymentOrder(data);
+
+    if (data?.status !== 'PENDING_PAYMENT') {
+      stopPolling();
+      return;
+    }
+  } catch (_) {
+    // store error is shown below; keep polling until timeout for transient failures.
+  } finally {
+    pollInFlight = false;
+  }
+
+  if (polling.value) {
+    schedulePoll();
+  }
+};
+
+const startPolling = () => {
+  if (polling.value) return;
+  polling.value = true;
+  pollStartedAt = Date.now();
+  schedulePoll();
+};
+
+watch(
+  () => orders.current?.status,
+  (status) => {
+    if (status === 'PENDING_PAYMENT') {
+      startPolling();
+    } else {
+      stopPolling();
+    }
+  }
+);
+
 onMounted(load);
+onUnmounted(stopPolling);
 </script>
 
 <style scoped>
@@ -172,5 +259,13 @@ onMounted(load);
   background: #fff1f2;
   border: 1px solid #fecdd3;
   color: #9f1239;
+}
+.info-banner {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  color: #1d4ed8;
 }
 </style>

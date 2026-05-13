@@ -1,6 +1,6 @@
-# MSA Shop Frontend (Auth 전용 미니 UI)
+# MSA Shop Frontend (Vue 3 + Vite)
 
-기존 쇼핑몰 화면을 모두 정리하고, Auth 서비스 CORS 동작을 확인하기 위한 **로그인 전용 단일 페이지**만 남겨두었습니다. `POST /api/auth/login` 호출과 쿠키/토큰 반환 여부를 빠르게 점검할 때 사용하세요.
+Gateway(API Base: `http://localhost:8080/api`)와 연동되는 Vue SPA입니다. 상품 조회, 장바구니, 주문 생성, 결제 요청, 주문 상태 확인 흐름을 로컬에서 확인할 수 있습니다.
 
 ## 실행 방법
 
@@ -18,9 +18,9 @@ npm run build:prod # .env.production 빌드
 
 ## 사용 방법
 
-1. 로그인 ID와 비밀번호를 입력하고 **로그인**을 누릅니다.
-2. 성공 시 응답으로 받은 Access Token을 화면에서 확인하거나 복사할 수 있습니다.
-3. Refresh Token은 HttpOnly 쿠키로 저장됩니다. **다시 로그인하기** 버튼으로 로그아웃 후 재시도할 수 있습니다.
+1. 로그인 또는 회원가입 후 상품을 장바구니에 담습니다.
+2. 장바구니에서 주문/결제를 요청합니다.
+3. 주문 상세에서 결제 결과와 주문 상태를 확인합니다.
 
 ## NPM Scripts
 
@@ -35,16 +35,16 @@ npm run build:prod # .env.production 빌드
 | `npm run lint` | ESLint 검사 |
 | `npm run format` | Prettier 정렬 |
 
-## 폴더 구조 (간소화)
+## 폴더 구조
 
 ```
 src/
   api/http.js        # Axios 인스턴스
   components/AppShell.vue
-  pages/LoginPage.vue
-  router/index.js    # 로그인 전용 라우터
-  stores/user.js     # 로그인/토큰 상태
-  styles/app.css     # 최소 스타일
+  pages/             # 로그인, 상품, 장바구니, 주문 화면
+  router/index.js
+  stores/            # 사용자, 상품, 장바구니, 주문 상태
+  styles/app.css
   main.js
 ```
 
@@ -52,4 +52,6 @@ src/
 
 - `POST /api/auth/login` : Access Token(JSON), Refresh Token은 HttpOnly 쿠키
 - `POST /api/auth/logout` : 쿠키 정리 및 재로그인 대비
+- `POST /api/orders/{orderId}/pay` : 결제 Saga 시작
+- `GET /api/orders/{orderId}` : 주문 상세와 결제 상태 조회
 - 모든 Axios 요청은 `withCredentials: true`로 전송하며 401 응답 시 `/login`으로 이동합니다.

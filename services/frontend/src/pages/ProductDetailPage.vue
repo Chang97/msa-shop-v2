@@ -14,9 +14,15 @@
         </p>
         <p
           class="stock"
-          :class="{ 'sold-out': product.stock === 0 }"
+          :class="{ 'sold-out': !canOrder }"
         >
           재고 {{ product.stock }}개
+        </p>
+        <p
+          v-if="!canOrder"
+          class="muted"
+        >
+          현재 주문할 수 없는 상품입니다.
         </p>
         <p class="created-at">
           등록일 {{ formatDate(product.createdAt) }}
@@ -32,13 +38,13 @@
           type="number"
           min="1"
           :max="product.stock"
-          :disabled="product.stock === 0"
+          :disabled="!canOrder"
         >
       </label>
       <button
         type="button"
         class="secondary"
-        :disabled="product.stock === 0"
+        :disabled="!canOrder"
         @click="handleAddToCart"
       >
         장바구니 담기
@@ -46,7 +52,7 @@
       <button
         type="button"
         class="primary"
-        :disabled="product.stock === 0"
+        :disabled="!canOrder"
         @click="handleBuyNow"
       >
         바로 주문
@@ -62,7 +68,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, watch } from 'vue';
+import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { useProductStore } from '@/stores/product';
 import { useCartStore } from '@/stores/cart';
@@ -77,6 +83,12 @@ const user = useUserStore();
 
 const product = ref(null);
 const quantity = ref(1);
+
+const canOrder = computed(() =>
+  product.value?.useYn !== false &&
+  product.value?.status === 'ON_SALE' &&
+  Number(product.value?.stock ?? 0) > 0
+);
 
 function formatCurrency(value) {
   return new Intl.NumberFormat('ko-KR', { style: 'currency', currency: 'KRW' }).format(value ?? 0);
@@ -106,8 +118,8 @@ async function load() {
 
 function handleAddToCart() {
   if (!product.value) return;
-  if (product.value.stock === 0) {
-    emit('notify', { message: '품절된 상품입니다.' });
+  if (!canOrder.value) {
+    emit('notify', { message: '현재 주문할 수 없는 상품입니다.' });
     return;
   }
   const maxQty = product.value.stock ?? quantity.value;

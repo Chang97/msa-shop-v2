@@ -45,9 +45,11 @@ import { computed, reactive, ref } from 'vue';
 import { RouterLink, useRouter } from 'vue-router';
 import { useCartStore } from '@/stores/cart';
 import { useOrderStore } from '@/stores/order';
+import { useProductStore } from '@/stores/product';
 
 const router = useRouter();
 const orders = useOrderStore();
+const products = useProductStore();
 const cart = useCartStore();
 
 const submitting = ref(false);
@@ -95,6 +97,18 @@ const payloadFromCart = () => ({
   }))
 });
 
+const validateCartItems = async () => {
+  await products.fetchAll();
+  const orderableProductIds = new Set(products.items.map((item) => item.id));
+  const invalidItems = cart.items.filter((item) => !orderableProductIds.has(item.productId));
+  if (!invalidItems.length) return true;
+
+  invalidItems.forEach((item) => cart.remove(item.productId));
+  window.alert('주문할 수 없는 상품이 장바구니에서 제거되었습니다. 장바구니를 다시 확인해 주세요.');
+  await router.push('/cart');
+  return false;
+};
+
 const submit = async () => {
   if (!cart.items.length || submitting.value) return;
 
@@ -102,6 +116,9 @@ const submit = async () => {
   let orderId = null;
 
   try {
+    const validCart = await validateCartItems();
+    if (!validCart) return;
+
     phase.value = 'creating';
     const created = await orders.create(payloadFromCart());
     orderId = created?.orderId ?? null;
